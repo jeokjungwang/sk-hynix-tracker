@@ -6,6 +6,7 @@ import {
   scaleCandles,
   type CandlePoint,
 } from "@/lib/candles";
+import { fetchBybitJson } from "@/lib/bybitFetch";
 
 const BYBIT_WS_URL = "wss://stream.bybit.com/v5/public/linear";
 const BYBIT_REST_URL =
@@ -32,8 +33,6 @@ export function useBybitPrice(): BybitPriceState {
   const [spotPrice, setSpotPrice] = useState(0);
   const [usdtCandles, setUsdtCandles] = useState<CandlePoint[]>([]);
 
-  const lastPriceRef = useRef(0);
-  const usdKrwRateRef = useRef(0);
   const lastSampleAtRef = useRef(0);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectAttemptRef = useRef(0);
@@ -63,7 +62,6 @@ export function useBybitPrice(): BybitPriceState {
           Number.isFinite(rate) &&
           rate > 0
         ) {
-          usdKrwRateRef.current = rate;
           setUsdKrwRate(rate);
         }
       } catch (e) {
@@ -87,30 +85,18 @@ export function useBybitPrice(): BybitPriceState {
 
     const applyFuturesPrice = (price: number) => {
       if (!Number.isFinite(price) || price <= 0) return;
-      lastPriceRef.current = price;
       setLastPrice(price);
       sampleChart(price);
     };
 
     const fetchFuturesNow = async () => {
       try {
-        const res = await fetch(BYBIT_REST_URL, {
-          method: "GET",
-          headers: {
-            "User-Agent":
-              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-            Accept: "application/json",
-          },
-          cache: "no-store",
-        });
-        if (!res.ok) {
-          throw new Error(`Bybit API 요청 실패: ${res.status}`);
-        }
-        const json = (await res.json()) as {
+        const json = await fetchBybitJson<{
+          retCode?: number;
           result?: { list?: Array<{ lastPrice?: string }> };
-        };
-        const raw = json.result?.list?.[0]?.lastPrice;
-        if (raw) applyFuturesPrice(parseFloat(raw));
+        }>(BYBIT_REST_URL);
+        const last = json.result?.list?.[0]?.lastPrice;
+        if (last) applyFuturesPrice(parseFloat(last));
       } catch (e) {
         console.error("[useBybitPrice] Bybit REST 조회 실패", e);
       }
@@ -171,11 +157,11 @@ export function useBybitPrice(): BybitPriceState {
       ws.onmessage = (event) => {
         try {
           const msg = JSON.parse(event.data as string) as {
-            topic?: string;
             data?: { lastPrice?: string };
           };
-          if (msg.topic !== TICKER_TOPIC || !msg.data?.lastPrice) return;
-          applyFuturesPrice(parseFloat(msg.data.lastPrice));
+          const last = msg.data?.lastPrice;
+          if (!last) return;
+          applyFuturesPrice(parseFloat(last));
         } catch {
           // ignore
         }

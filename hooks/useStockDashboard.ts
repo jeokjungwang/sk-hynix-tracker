@@ -7,6 +7,7 @@ import {
   scaleCandles,
   type CandlePoint,
 } from "@/lib/candles";
+import { fetchBybitJson } from "@/lib/bybitFetch";
 import {
   pickSpotPrice,
   resolveSpotSource,
@@ -116,7 +117,7 @@ export function useStockDashboard(): StockDashboardState {
     const map = new Map<string, string>();
     for (const stock of STOCKS) {
       map.set(stock.bybitTicker, stock.id);
-      map.set(`tickers.${stock.bybitTicker}`, stock.id);
+      map.set(stock.bybitTicker.toLowerCase(), stock.id);
     }
     return map;
   }, []);
@@ -263,7 +264,7 @@ export function useStockDashboard(): StockDashboardState {
     };
   }, []);
 
-  // Bybit multi-ticker REST + WebSocket
+  // Bybit linear REST + WebSocket
   useEffect(() => {
     shouldReconnectRef.current = true;
 
@@ -281,26 +282,14 @@ export function useStockDashboard(): StockDashboardState {
       await Promise.all(
         STOCKS.map(async (stock) => {
           try {
-            const res = await fetch(
-              `https://api.bybit.com/v5/market/tickers?category=linear&symbol=${stock.bybitTicker}`,
-              {
-                method: "GET",
-                headers: {
-                  "User-Agent":
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-                  Accept: "application/json",
-                },
-                cache: "no-store",
-              }
+            const json = await fetchBybitJson<{
+              retCode?: number;
+              result?: { list?: Array<{ symbol?: string; lastPrice?: string }> };
+            }>(
+              `https://api.bybit.com/v5/market/tickers?category=linear&symbol=${stock.bybitTicker}`
             );
-            if (!res.ok) {
-              throw new Error(`Bybit API 요청 실패: ${res.status}`);
-            }
-            const json = (await res.json()) as {
-              result?: { list?: Array<{ lastPrice?: string }> };
-            };
-            const raw = json.result?.list?.[0]?.lastPrice;
-            if (raw) applyFuturesPrice(stock.id, parseFloat(raw));
+            const last = json.result?.list?.[0]?.lastPrice;
+            if (last) applyFuturesPrice(stock.id, parseFloat(last));
           } catch (e) {
             console.error(
               `[useStockDashboard] Bybit REST 실패 (${stock.bybitTicker})`,
@@ -369,14 +358,14 @@ export function useStockDashboard(): StockDashboardState {
             topic?: string;
             data?: { symbol?: string; lastPrice?: string };
           };
-          if (!msg.topic || !msg.data?.lastPrice) return;
+          const symbol = msg.data?.symbol;
+          const last = msg.data?.lastPrice;
+          if (!symbol || !last) return;
 
-          const stockId =
-            tickerToId.get(msg.topic) ??
-            (msg.data.symbol ? tickerToId.get(msg.data.symbol) : undefined);
+          const stockId = tickerToId.get(symbol);
           if (!stockId) return;
 
-          applyFuturesPrice(stockId, parseFloat(msg.data.lastPrice));
+          applyFuturesPrice(stockId, parseFloat(last));
         } catch {
           // ignore malformed frames
         }
