@@ -94,7 +94,18 @@ export function useBybitPrice(): BybitPriceState {
 
     const fetchFuturesNow = async () => {
       try {
-        const res = await fetch(BYBIT_REST_URL);
+        const res = await fetch(BYBIT_REST_URL, {
+          method: "GET",
+          headers: {
+            "User-Agent":
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+            Accept: "application/json",
+          },
+          cache: "no-store",
+        });
+        if (!res.ok) {
+          throw new Error(`Bybit API 요청 실패: ${res.status}`);
+        }
         const json = (await res.json()) as {
           result?: { list?: Array<{ lastPrice?: string }> };
         };

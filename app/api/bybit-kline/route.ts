@@ -49,13 +49,18 @@ export async function GET(request: NextRequest) {
       url.searchParams.set("end", String(cursorEnd));
       url.searchParams.set("limit", String(PAGE_LIMIT));
 
-      const res = await fetch(url.toString(), { cache: "no-store" });
+      const res = await fetch(url.toString(), {
+        method: "GET",
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+          Accept: "application/json",
+        },
+        next: { revalidate: 0 }, // 캐시 방지
+      });
       if (!res.ok) {
         console.error("[/api/bybit-kline] Bybit HTTP 오류", res.status, symbol);
-        return NextResponse.json(
-          { error: "Bybit 캔들 조회 실패", status: res.status },
-          { status: 502 }
-        );
+        throw new Error(`Bybit API 요청 실패: ${res.status}`);
       }
 
       const json = (await res.json()) as {
