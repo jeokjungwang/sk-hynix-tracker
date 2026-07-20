@@ -18,6 +18,18 @@ export const metadata: Metadata = {
     "Bybit futures vs Naver spot multi-stock dashboard with Upbit FX rate",
 };
 
+const themeInitScript = `
+(function(){
+  try {
+    var t = localStorage.getItem('sk-tracker-theme');
+    if (t !== 'light' && t !== 'dark') t = 'dark';
+    document.documentElement.classList.add(t);
+  } catch (e) {
+    document.documentElement.classList.add('dark');
+  }
+})();
+`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -26,9 +38,13 @@ export default function RootLayout({
   return (
     <html
       lang="ko"
+      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="flex min-h-full flex-col bg-background text-foreground">
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
+      <body className="flex h-full flex-col overflow-hidden bg-background text-foreground">
         {children}
       </body>
     </html>

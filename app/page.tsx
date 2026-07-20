@@ -1,11 +1,14 @@
+import FitScale from "@/components/FitScale";
 import StockDashboard from "@/components/StockDashboard";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export default function Home() {
   return (
-    <main className="min-h-full px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
-      <div className="mx-auto max-w-7xl">
+    <main className="h-dvh overflow-hidden px-3 py-3">
+      <ThemeToggle />
+      <FitScale designWidth={1600}>
         <StockDashboard />
-      </div>
+      </FitScale>
     </main>
   );
 }

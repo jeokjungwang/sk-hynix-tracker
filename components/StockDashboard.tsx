@@ -1,6 +1,8 @@
 "use client";
 
 import type { ReactNode } from "react";
+import ComparisonPanel from "@/components/ComparisonPanel";
+import MarketClocks from "@/components/MarketClocks";
 import TickerChart from "@/components/TickerChart";
 import {
   useStockDashboard,
@@ -40,7 +42,7 @@ function formatBasis(value: number, ready: boolean): string {
 }
 
 function Hint({ children }: { children: ReactNode }) {
-  return <p className="text-xs leading-relaxed text-slate-500">{children}</p>;
+  return <p className="text-[11px] leading-relaxed text-slate-500">{children}</p>;
 }
 
 function SourceBadge({ label }: { label: SpotLabel }) {
@@ -69,12 +71,6 @@ function SourceBadge({ label }: { label: SpotLabel }) {
   );
 }
 
-function spotCaption(label: SpotLabel): string {
-  if (label === "NXT(데이터없음)") return "NXT 없음 · KRX 종가 유지";
-  if (label === "NXT") return "넥스트레이드 현물";
-  return "정규장(KRX) 현물";
-}
-
 function StockCard({
   stock,
   usdKrwRate,
@@ -88,67 +84,52 @@ function StockCard({
   const hasChartData = stock.priceHistory.length > 0;
 
   return (
-    <article className="flex flex-col gap-4 rounded-2xl border border-slate-800 bg-slate-900/70 p-5 backdrop-blur sm:p-6">
-      <header className="flex items-start justify-between gap-3">
-        <div className="space-y-1">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+    <article className="flex min-w-0 flex-col gap-3 rounded-2xl border border-slate-800 bg-slate-900/70 p-3.5 backdrop-blur">
+      <header className="flex items-start justify-between gap-2">
+        <div className="min-w-0 space-y-0.5">
+          <p className="truncate text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
             {stock.bybitTicker} · {stock.naverCode}
           </p>
-          <h2 className="text-xl font-bold tracking-tight text-slate-50 sm:text-2xl">
+          <h2 className="truncate text-xl font-bold tracking-tight text-slate-50">
             {stock.name}
           </h2>
         </div>
-        <div className="flex flex-col items-end gap-1">
-          <SourceBadge label={stock.spotLabel} />
-          <p className="text-[10px] text-slate-500">
-            {spotCaption(stock.spotLabel)}
-          </p>
-        </div>
+        <SourceBadge label={stock.spotLabel} />
       </header>
 
-      <div className="rounded-xl border border-slate-800/80 bg-slate-950/40 px-4 py-4">
-        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+      <div className="rounded-xl border border-slate-800/80 bg-slate-950/40 px-3 py-3">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
           선물 환산가 (KRW)
         </p>
-        <p className="mt-2 font-mono text-3xl font-bold tracking-tight text-white sm:text-4xl">
+        <p className="mt-1 font-mono text-[1.75rem] font-bold leading-none tracking-tight text-white">
           {formatKrw(stock.futuresKrw)}
         </p>
-        <p className="mt-2 font-mono text-sm font-medium text-yellow-400/80">
+        <p className="mt-1.5 font-mono text-xs font-medium text-yellow-400/80">
           {hasFutures ? formatUsdt(stock.lastPrice) : "-"}
         </p>
-        <p className="mt-1 font-mono text-sm font-medium text-sky-300">
-          ₩{formatRate(usdKrwRate)} · Upbit KRW-USDT
+        <p className="mt-0.5 font-mono text-xs font-medium text-sky-300">
+          ₩{formatRate(usdKrwRate)}
         </p>
-        {!hasFutures && (
-          <div className="mt-2">
-            <Hint>가격 불러오는 중...</Hint>
-          </div>
-        )}
+        {!hasFutures && <Hint>가격 불러오는 중...</Hint>}
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div className="rounded-xl border border-slate-800/80 bg-slate-950/40 px-4 py-4">
-          <div className="flex items-center justify-between gap-2">
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-              현물가 (네이버)
-            </p>
-            <SourceBadge label={stock.spotLabel} />
-          </div>
-          <p className="mt-2 font-mono text-xl font-bold text-slate-50 sm:text-2xl">
+      <div className="grid grid-cols-2 gap-2">
+        <div className="rounded-xl border border-slate-800/80 bg-slate-950/40 px-3 py-3">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+            현물가
+          </p>
+          <p className="mt-1 font-mono text-xl font-bold leading-tight text-slate-50">
             {formatKrw(stock.spotPrice)}
           </p>
-          {stock.usingNxtFallback && hasSpot && (
-            <Hint>NXT 일시 오류 · 정규장 종가 표시 중</Hint>
-          )}
-          {!hasSpot && <Hint>가격 불러오는 중...</Hint>}
+          {!hasSpot && <Hint>불러오는 중...</Hint>}
         </div>
 
-        <div className="rounded-xl border border-slate-800/80 bg-slate-950/40 px-4 py-4">
-          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-            괴리율 (Basis)
+        <div className="rounded-xl border border-slate-800/80 bg-slate-950/40 px-3 py-3">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+            괴리율
           </p>
           <p
-            className={`mt-2 font-mono text-xl font-bold sm:text-2xl ${
+            className={`mt-1 font-mono text-xl font-bold leading-tight ${
               !hasBasis
                 ? "text-slate-500"
                 : stock.basis >= 0
@@ -158,20 +139,17 @@ function StockCard({
           >
             {formatBasis(stock.basis, hasBasis)}
           </p>
-          {!hasBasis && <Hint>가격 불러오는 중...</Hint>}
+          {!hasBasis && <Hint>불러오는 중...</Hint>}
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-slate-800/80 bg-slate-950/40">
-        <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3">
-          <p className="text-xs font-semibold text-slate-300">
-            선물 환산가 차트
-          </p>
-          <p className="text-[10px] text-slate-500">
-            캔들 5분봉 · 양봉 빨강 · 음봉 파랑 · 최근 2주
+      <div className="min-h-0 flex-1 overflow-hidden rounded-xl border border-slate-800/80 bg-slate-950/40">
+        <div className="border-b border-slate-800 px-3 py-2">
+          <p className="text-[11px] font-semibold text-slate-300">
+            선물 환산가 차트 · 5분봉
           </p>
         </div>
-        <div className="flex h-[240px] items-center justify-center overflow-x-auto p-2">
+        <div className="flex h-[200px] items-center justify-center p-1.5">
           {hasChartData ? (
             <div className="h-full w-full min-w-0">
               <TickerChart
@@ -181,7 +159,7 @@ function StockCard({
               />
             </div>
           ) : (
-            <p className="text-sm text-slate-500">과거·실시간 데이터 불러오는 중...</p>
+            <p className="text-xs text-slate-500">데이터 불러오는 중...</p>
           )}
         </div>
       </div>
@@ -195,28 +173,26 @@ export default function StockDashboard() {
     preferredSpotSource === "NXT" ? "NXT" : "KRX";
 
   return (
-    <div className="flex flex-col gap-7">
-      <header className="space-y-3 pb-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-            Multi-Stock · Bybit Futures · Naver Spot
-          </p>
-          <SourceBadge label={headerLabel} />
-        </div>
-        <div className="space-y-2">
-          <h1 className="text-2xl font-bold tracking-tight text-slate-50 sm:text-3xl lg:text-4xl">
+    <div className="flex flex-col gap-4">
+      <header className="flex items-start justify-between gap-4 pb-0.5">
+        <div className="min-w-0 space-y-1.5">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+              Multi-Stock · Bybit Futures · Naver Spot
+            </p>
+            <SourceBadge label={headerLabel} />
+          </div>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-50">
             삼성전자 SK하이닉스 24시간 시장현황
           </h1>
-          <p className="text-sm font-medium leading-relaxed text-sky-400">
+          <p className="text-sm font-medium text-sky-400">
             해외 bybit선물 금액을 통해 공휴일에도 시세확인 가능!
           </p>
-          <p className="text-xs text-slate-500">
-            09:00~15:30 → KRX · 그 외 → NXT (10초마다 자동 전환)
-          </p>
         </div>
+        <MarketClocks />
       </header>
 
-      <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <section className="grid grid-cols-3 items-stretch gap-3">
         {stocks.map((stock) => (
           <StockCard
             key={stock.id}
@@ -224,14 +200,13 @@ export default function StockDashboard() {
             usdKrwRate={usdKrwRate}
           />
         ))}
+        <ComparisonPanel />
       </section>
 
-      <footer className="space-y-1 pb-2 text-center text-xs text-slate-600">
+      <footer className="space-y-0.5 pb-1 text-center text-[11px] text-slate-600">
         <p>
-          데이터: Bybit v5 · 네이버 KRX/NXT · 실시간 업비트 환율 적용
-        </p>
-        <p>
-          현재 세션: {headerLabel} · 환율 ₩{formatRate(usdKrwRate)}
+          Bybit SAMSUNG·SKHYNIX·SKHY·MU · 네이버 KRX/NXT · 업비트 환율 · {headerLabel} · ₩
+          {formatRate(usdKrwRate)}
         </p>
       </footer>
     </div>

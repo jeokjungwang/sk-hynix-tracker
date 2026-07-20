@@ -1,8 +1,33 @@
 @import "tailwindcss";
 
-:root {
+:root,
+html.dark {
   --background: #0b0f14;
   --foreground: #e8edf4;
+  --glow: #152033;
+  --toggle-bg: rgb(15 23 42 / 0.92);
+  --toggle-border: rgb(51 65 85 / 0.9);
+  --toggle-fg: #e2e8f0;
+  --chart-text: #94a3b8;
+  --chart-grid: rgba(30, 41, 59, 0.7);
+  --chart-cross: rgba(148, 163, 184, 0.4);
+  --chart-label: #1e293b;
+  --chart-zero: rgba(148, 163, 184, 0.55);
+}
+
+html.light {
+  --background: #f1f5f9;
+  --foreground: #0f172a;
+  --glow: #dbeafe;
+  --toggle-bg: rgb(255 255 255 / 0.95);
+  --toggle-border: rgb(203 213 225 / 0.95);
+  --toggle-fg: #0f172a;
+  --chart-text: #64748b;
+  --chart-grid: rgba(148, 163, 184, 0.35);
+  --chart-cross: rgba(100, 116, 139, 0.45);
+  --chart-label: #e2e8f0;
+  --chart-zero: rgba(100, 116, 139, 0.55);
+  color-scheme: light;
 }
 
 @theme inline {
@@ -14,10 +39,118 @@
 
 body {
   background:
-    radial-gradient(1200px 600px at 50% -10%, #152033 0%, transparent 55%),
+    radial-gradient(1200px 600px at 50% -10%, var(--glow) 0%, transparent 55%),
     var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.theme-toggle {
+  background: var(--toggle-bg);
+  border-color: var(--toggle-border);
+  color: var(--toggle-fg);
+}
+
+/* Light mode remaps for existing slate-based UI */
+html.light .bg-slate-900\/70 {
+  background-color: rgb(255 255 255 / 0.92) !important;
+}
+
+html.light .bg-slate-950\/40,
+html.light .bg-slate-950\/50,
+html.light .bg-slate-950\/70 {
+  background-color: rgb(248 250 252 / 0.95) !important;
+}
+
+html.light .bg-slate-800 {
+  background-color: #cbd5e1 !important;
+}
+
+html.light .border-slate-800,
+html.light .border-slate-800\/80 {
+  border-color: #e2e8f0 !important;
+}
+
+html.light .text-white,
+html.light .text-slate-50,
+html.light .text-slate-100 {
+  color: #0f172a !important;
+}
+
+html.light .text-slate-200,
+html.light .text-slate-300 {
+  color: #334155 !important;
+}
+
+html.light .text-slate-400 {
+  color: #475569 !important;
+}
+
+html.light .text-slate-500 {
+  color: #64748b !important;
+}
+
+html.light .text-slate-600 {
+  color: #94a3b8 !important;
+}
+
+html.light .text-sky-300,
+html.light .text-sky-400 {
+  color: #0284c7 !important;
+}
+
+html.light .text-yellow-400\/80 {
+  color: rgb(202 138 4 / 0.95) !important;
+}
+
+html.light .text-emerald-300 {
+  color: #059669 !important;
+}
+
+html.light .text-red-300,
+html.light .text-red-400 {
+  color: #dc2626 !important;
+}
+
+html.light .text-blue-300,
+html.light .text-blue-400 {
+  color: #2563eb !important;
+}
+
+html.light .border-emerald-400\/30 {
+  border-color: rgb(52 211 153 / 0.45) !important;
+}
+
+html.light .bg-emerald-500\/10 {
+  background-color: rgb(16 185 129 / 0.12) !important;
+}
+
+html.light .text-emerald-300 {
+  color: #047857 !important;
+}
+
+html.light .border-violet-400\/40 {
+  border-color: rgb(167 139 250 / 0.5) !important;
+}
+
+html.light .bg-violet-500\/15 {
+  background-color: rgb(139 92 246 / 0.12) !important;
+}
+
+html.light .text-violet-300 {
+  color: #6d28d9 !important;
+}
+
+html.light .border-fuchsia-400\/50 {
+  border-color: rgb(232 121 249 / 0.5) !important;
+}
+
+html.light .bg-fuchsia-500\/20 {
+  background-color: rgb(217 70 239 / 0.12) !important;
+}
+
+html.light .text-fuchsia-200 {
+  color: #a21caf !important;
 }
