@@ -9,12 +9,12 @@ export default function LoadingSpinner({
 }: LoadingSpinnerProps) {
   return (
     <div
-      className={`inline-flex items-center gap-2.5 text-sm text-slate-400 ${className}`}
+      className={`inline-flex items-center gap-2.5 text-sm text-slate-500 ${className}`}
       role="status"
       aria-live="polite"
     >
       <span
-        className="h-4 w-4 animate-spin rounded-full border-2 border-slate-600 border-t-sky-400"
+        className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-sky-500"
         aria-hidden
       />
       <span>{label}</span>

@@ -51,30 +51,30 @@ export default function TickerChart({
       autoSize: true,
       layout: {
         background: { type: ColorType.Solid, color: "transparent" },
-        textColor: "#94a3b8",
+        textColor: "#64748b",
         fontFamily: "var(--font-geist-mono), ui-monospace, monospace",
       },
       grid: {
-        vertLines: { color: "rgba(30, 41, 59, 0.7)" },
-        horzLines: { color: "rgba(30, 41, 59, 0.7)" },
+        vertLines: { color: "rgba(226, 232, 240, 0.95)" },
+        horzLines: { color: "rgba(226, 232, 240, 0.95)" },
       },
       crosshair: {
         mode: 1,
         vertLine: {
-          color: "rgba(148, 163, 184, 0.4)",
-          labelBackgroundColor: "#1e293b",
+          color: "rgba(100, 116, 139, 0.45)",
+          labelBackgroundColor: "#334155",
         },
         horzLine: {
-          color: "rgba(148, 163, 184, 0.4)",
-          labelBackgroundColor: "#1e293b",
+          color: "rgba(100, 116, 139, 0.45)",
+          labelBackgroundColor: "#334155",
         },
       },
       rightPriceScale: {
-        borderColor: "rgba(51, 65, 85, 0.8)",
+        borderColor: "rgba(203, 213, 225, 0.95)",
         scaleMargins: { top: 0.12, bottom: 0.08 },
       },
       timeScale: {
-        borderColor: "rgba(51, 65, 85, 0.8)",
+        borderColor: "rgba(203, 213, 225, 0.95)",
         timeVisible: true,
         secondsVisible: false,
         rightOffset: 4,
@@ -195,7 +195,7 @@ export default function TickerChart({
         className="h-full w-full cursor-grab touch-pan-x active:cursor-grabbing"
         title="캔들스틱 · 좌우 드래그 · 휠 줌"
       />
-      <p className="pointer-events-none absolute bottom-2 left-3 z-10 rounded bg-slate-950/70 px-2 py-1 text-[10px] font-medium tracking-wide text-slate-400">
+      <p className="pointer-events-none absolute bottom-2 left-3 z-10 rounded bg-white/85 px-2 py-1 text-[10px] font-medium tracking-wide text-slate-500 shadow-sm">
         캔들 5분봉 · ← 드래그 과거 · 휠 줌
         {loadBackData ? " · load_back_data" : ""}
       </p>
