@@ -223,7 +223,17 @@ export default function TickerChart({
     pointCountRef.current = candleData.length;
     series.setData(candleData);
 
-    if (prevCount === 0 || followLiveRef.current) {
+    // First load / big history jump: show a readable recent window
+    if (prevCount === 0 || candleData.length - prevCount > 20) {
+      const visible = Math.min(120, candleData.length);
+      chart.timeScale().setVisibleLogicalRange({
+        from: Math.max(candleData.length - visible, 0),
+        to: candleData.length + 2,
+      });
+      return;
+    }
+
+    if (followLiveRef.current) {
       chart.timeScale().scrollToRealTime();
     }
   }, [data]);
