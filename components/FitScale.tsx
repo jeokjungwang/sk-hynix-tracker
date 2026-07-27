@@ -32,12 +32,8 @@ export default function FitScale({
   const [enabled, setEnabled] = useState(false);
 
   useLayoutEffect(() => {
-    const syncEnabled = () => {
-      setEnabled(window.innerWidth >= 1100);
-    };
-    syncEnabled();
-    window.addEventListener("resize", syncEnabled);
-    return () => window.removeEventListener("resize", syncEnabled);
+    // Lock once — toggling enabled remounts children and wipes charts
+    setEnabled(window.innerWidth >= 1100);
   }, []);
 
   useLayoutEffect(() => {

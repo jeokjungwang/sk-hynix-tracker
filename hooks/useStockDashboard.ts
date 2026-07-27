@@ -9,6 +9,11 @@ import {
 } from "@/lib/candles";
 import { fetchBybitJson } from "@/lib/bybitFetch";
 import {
+  fetchKlinesClient,
+  loadCachedKlines,
+  saveCachedKlines,
+} from "@/lib/clientKlines";
+import {
   pickSpotPrice,
   resolveSpotSource,
   type SpotLabel,
@@ -133,32 +138,42 @@ export function useStockDashboard(): StockDashboardState {
       const merged = applyTickToCandles(prev[stockId] ?? [], usdtPrice, nowSec);
       const next = { ...prev, [stockId]: merged };
       historiesRef.current = next;
+      const stock = STOCKS.find((s) => s.id === stockId);
+      if (stock) saveCachedKlines(stock.bybitTicker, merged);
       return next;
     });
   };
 
   const fetchKlines = async (stock: StockMeta, endMs?: number) => {
-    const params = new URLSearchParams({
+    return fetchKlinesClient({
       symbol: stock.bybitTicker,
       interval: HISTORY_INTERVAL,
-      days: String(HISTORY_DAYS),
+      days: HISTORY_DAYS,
+      endMs,
     });
-    if (endMs) params.set("end", String(endMs));
-
-    const res = await fetch(`/api/bybit-kline?${params.toString()}`);
-    const data = (await res.json()) as {
-      bars?: CandlePoint[];
-      error?: string;
-    };
-    if (!res.ok) {
-      throw new Error(data.error || "캔들 조회 실패");
-    }
-    return data.bars ?? [];
   };
 
   useEffect(() => {
     historiesRef.current = histories;
   }, [histories]);
+
+  // Restore cached candles immediately (survives remount / refresh)
+  useEffect(() => {
+    const next = emptyHistoryMap();
+    let hasAny = false;
+    for (const stock of STOCKS) {
+      const cached = loadCachedKlines(stock.bybitTicker);
+      if (cached.length > 0) {
+        next[stock.id] = cached;
+        hasAny = true;
+        historyLoadedRef.current[stock.id] = true;
+      }
+    }
+    if (hasAny) {
+      historiesRef.current = next;
+      setHistories(next);
+    }
+  }, []);
 
   /** Datafeed-style getBars: load / prepend historical 5m candles (max 14d) */
   const getBarsForStock = async (stockId: string) => {
@@ -178,6 +193,7 @@ export function useStockDashboard(): StockDashboardState {
       setHistories((prev) => {
         const merged = mergeCandles(prev[stockId] ?? [], bars);
         historiesRef.current = { ...prev, [stockId]: merged };
+        saveCachedKlines(stock.bybitTicker, merged);
         return { ...prev, [stockId]: merged };
       });
       historyLoadedRef.current[stockId] = true;
@@ -195,7 +211,6 @@ export function useStockDashboard(): StockDashboardState {
     const loadAll = async () => {
       await Promise.all(
         STOCKS.map(async (stock) => {
-          if (historyLoadedRef.current[stock.id]) return;
           historyLoadingRef.current[stock.id] = true;
           try {
             const bars = await fetchKlines(stock);
@@ -204,6 +219,7 @@ export function useStockDashboard(): StockDashboardState {
               const merged = mergeCandles(prev[stock.id] ?? [], bars);
               const next = { ...prev, [stock.id]: merged };
               historiesRef.current = next;
+              saveCachedKlines(stock.bybitTicker, merged);
               return next;
             });
             historyLoadedRef.current[stock.id] = true;

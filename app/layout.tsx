@@ -13,9 +13,31 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://everydaycheck.vercel.app"),
   title: "삼성전자 · SK하이닉스 실시간 대시보드",
-  description:
-    "Bybit futures vs Naver spot multi-stock dashboard with Upbit FX rate",
+  description: "주말에도 실시간으로 시세 확인! 24시간 삼성전자·하이닉스 USDT 선물시세",
+  openGraph: {
+    type: "website",
+    locale: "ko_KR",
+    url: "https://everydaycheck.vercel.app",
+    siteName: "everydaycheck",
+    title: "24시간 삼성전자·하이닉스 USDT 선물시세",
+    description: "주말에도 실시간으로 시세 확인! 해외 USDT 선물 vs 코스피 현물",
+    images: [
+      {
+        url: "https://everydaycheck.vercel.app/og.png",
+        width: 1200,
+        height: 630,
+        alt: "24시간 삼성전자·하이닉스 USDT 선물시세",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "24시간 삼성전자·하이닉스 USDT 선물시세",
+    description: "주말에도 실시간으로 시세 확인! 해외 USDT 선물 vs 코스피 현물",
+    images: ["https://everydaycheck.vercel.app/og.png"],
+  },
 };
 
 export const viewport = {

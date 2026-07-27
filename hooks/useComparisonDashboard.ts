@@ -6,6 +6,11 @@ import {
   mergeCandles,
   type CandlePoint,
 } from "@/lib/candles";
+import {
+  fetchKlinesClient,
+  loadCachedKlines,
+  saveCachedKlines,
+} from "@/lib/clientKlines";
 import { fetchBybitJson } from "@/lib/bybitFetch";
 import {
   buildIndexedSeries,
@@ -69,32 +74,48 @@ export function useComparisonDashboard(): ComparisonDashboardState {
     const nowSec = Math.floor(Date.now() / 1000);
     if (nowSec <= (lastTickAtRef.current[id] ?? 0)) return;
     lastTickAtRef.current[id] = nowSec;
+    const meta = COMPARE_SERIES.find((s) => s.id === id);
     setHistories((prev) => {
+      const merged = applyTickToCandles(prev[id] ?? [], usdtPrice, nowSec);
       const next = {
         ...prev,
-        [id]: applyTickToCandles(prev[id] ?? [], usdtPrice, nowSec),
+        [id]: merged,
       };
       historiesRef.current = next;
+      if (meta) saveCachedKlines(meta.bybitTicker, merged);
       return next;
     });
   };
 
   const fetchKlines = async (ticker: string, endMs?: number) => {
-    const params = new URLSearchParams({
+    return fetchKlinesClient({
       symbol: ticker,
       interval: HISTORY_INTERVAL,
-      days: String(HISTORY_DAYS),
+      days: HISTORY_DAYS,
+      endMs,
     });
-    if (endMs) params.set("end", String(endMs));
-    const res = await fetch(`/api/bybit-kline?${params.toString()}`);
-    const data = (await res.json()) as { bars?: CandlePoint[]; error?: string };
-    if (!res.ok) throw new Error(data.error || "캔들 조회 실패");
-    return data.bars ?? [];
   };
 
   useEffect(() => {
     historiesRef.current = histories;
   }, [histories]);
+
+  // Restore session cache first
+  useEffect(() => {
+    const next = emptyHistory();
+    let hasAny = false;
+    for (const series of COMPARE_SERIES) {
+      const cached = loadCachedKlines(series.bybitTicker);
+      if (cached.length > 0) {
+        next[series.id] = cached;
+        hasAny = true;
+      }
+    }
+    if (hasAny) {
+      historiesRef.current = next;
+      setHistories(next);
+    }
+  }, []);
 
   // Historical load
   useEffect(() => {
@@ -107,11 +128,13 @@ export function useComparisonDashboard(): ComparisonDashboardState {
             const bars = await fetchKlines(series.bybitTicker);
             if (cancelled || bars.length === 0) return;
             setHistories((prev) => {
+              const merged = mergeCandles(prev[series.id] ?? [], bars);
               const next = {
                 ...prev,
-                [series.id]: mergeCandles(prev[series.id] ?? [], bars),
+                [series.id]: merged,
               };
               historiesRef.current = next;
+              saveCachedKlines(series.bybitTicker, merged);
               return next;
             });
           } catch (e) {
