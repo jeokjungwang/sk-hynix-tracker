@@ -142,10 +142,13 @@ function StockCard({
           <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
             선물 환산가 (KRW)
           </p>
-          <p className="font-mono text-[11px] font-medium text-slate-400">
-            현물: {hasSpot ? formatKrw(stock.spotPrice) : "-"}
-            <span className="mx-1 text-slate-600">/</span>
-            괴리율:{" "}
+          <p className="font-mono text-sm font-semibold tracking-tight">
+            <span className="text-slate-400">현물:</span>{" "}
+            <span className="text-base font-bold text-yellow-400">
+              {hasSpot ? formatKrw(stock.spotPrice) : "-"}
+            </span>
+            <span className="mx-1.5 text-slate-600">/</span>
+            <span className="text-slate-400">괴리율:</span>{" "}
             <span
               className={
                 !hasBasis
