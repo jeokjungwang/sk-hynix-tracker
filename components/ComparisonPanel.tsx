@@ -31,7 +31,7 @@ export default function ComparisonPanel() {
   const { indexedPoints, moves, spreads, ready } = useComparisonDashboard();
 
   return (
-    <article className="flex h-full min-h-0 min-w-0 flex-col gap-2 rounded-2xl border border-slate-800 bg-slate-900/70 p-3 backdrop-blur lg:overflow-hidden">
+    <article className="flex min-w-0 flex-col gap-2 rounded-2xl border border-slate-800 bg-slate-900/70 p-3 backdrop-blur lg:h-full lg:min-h-0 lg:overflow-hidden">
       <header className="shrink-0 space-y-0.5">
         <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
           Slope · Relative Move
@@ -124,17 +124,21 @@ export default function ComparisonPanel() {
         </div>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-slate-800/80 bg-slate-950/40">
+      <div className="flex h-[240px] shrink-0 flex-col overflow-hidden rounded-xl border border-slate-800/80 bg-slate-950/40 lg:h-auto lg:min-h-[180px] lg:flex-1">
         <div className="shrink-0 border-b border-slate-800 px-3 py-2">
           <p className="text-[11px] font-semibold text-slate-300">
             24시간 기울기 비교 · 출발 0%
           </p>
         </div>
-        <div className="flex min-h-[160px] flex-1 items-center justify-center p-1.5 lg:min-h-0">
+        <div className="relative min-h-0 flex-1 p-1.5">
           {ready ? (
-            <ComparisonChart data={indexedPoints} />
+            <div className="absolute inset-1.5">
+              <ComparisonChart data={indexedPoints} />
+            </div>
           ) : (
-            <p className="text-xs text-slate-500">기울기 데이터 불러오는 중...</p>
+            <div className="flex h-full items-center justify-center">
+              <p className="text-xs text-slate-500">기울기 데이터 불러오는 중...</p>
+            </div>
           )}
         </div>
       </div>

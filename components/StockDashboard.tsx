@@ -124,7 +124,7 @@ function StockCard({
     CHART_INTERVALS.find((i) => i.id === chartInterval)?.label ?? "5분봉";
 
   return (
-    <article className="flex min-h-0 min-w-0 flex-col gap-2 rounded-2xl border border-slate-800 bg-slate-900/70 p-3 backdrop-blur lg:overflow-hidden">
+    <article className="flex min-w-0 flex-col gap-2 rounded-2xl border border-slate-800 bg-slate-900/70 p-3 backdrop-blur lg:min-h-0 lg:overflow-hidden">
       <header className="flex shrink-0 items-start justify-between gap-2">
         <div className="min-w-0 space-y-0.5">
           <p className="truncate text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
@@ -172,16 +172,16 @@ function StockCard({
         {!hasFutures && <Hint>가격 불러오는 중...</Hint>}
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-slate-800/80 bg-slate-950/40">
+      <div className="flex h-[240px] shrink-0 flex-col overflow-hidden rounded-xl border border-slate-800/80 bg-slate-950/40 lg:h-auto lg:min-h-[180px] lg:flex-1">
         <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-slate-800 px-3 py-2">
           <p className="text-[11px] font-semibold text-slate-300">
             선물 환산가 차트 · {intervalLabel}
           </p>
           <IntervalTabs value={chartInterval} onChange={onIntervalChange} />
         </div>
-        <div className="flex min-h-[160px] flex-1 items-center justify-center p-1.5 lg:min-h-0">
+        <div className="relative min-h-0 flex-1 p-1.5">
           {hasChartData ? (
-            <div className="h-full w-full min-h-0 min-w-0">
+            <div className="absolute inset-1.5">
               <TickerChart
                 data={stock.priceHistory}
                 loadBackData={stock.loadBackData}
@@ -189,7 +189,9 @@ function StockCard({
               />
             </div>
           ) : (
-            <p className="text-xs text-slate-500">데이터 불러오는 중...</p>
+            <div className="flex h-full items-center justify-center">
+              <p className="text-xs text-slate-500">데이터 불러오는 중...</p>
+            </div>
           )}
         </div>
       </div>
@@ -212,7 +214,7 @@ export default function StockDashboard() {
   const hynix = stocks.find((s) => s.id === "hynix");
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-3 overflow-y-auto lg:overflow-hidden">
+    <div className="flex h-full min-h-0 flex-col gap-3 overflow-y-auto overscroll-y-contain lg:overflow-hidden">
       <header className="flex shrink-0 flex-col gap-3 pb-0.5 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
         <div className="min-w-0 space-y-1.5 pr-12 lg:pr-0">
           <div className="flex flex-wrap items-center gap-2">
@@ -231,8 +233,8 @@ export default function StockDashboard() {
         <MarketClocks />
       </header>
 
-      {/* Mobile: 세로 스크롤 · PC: 3열 + 높이 꽉 채움(창 줄이면 차트도 축소) */}
-      <section className="flex min-h-0 flex-1 flex-col gap-3 lg:grid lg:grid-cols-3 lg:items-stretch lg:overflow-hidden">
+      {/* Mobile: 세로 스크롤(차트 고정 높이) · PC: 3열 + 남는 높이 분배 */}
+      <section className="flex flex-col gap-3 pb-4 lg:min-h-0 lg:flex-1 lg:grid lg:grid-cols-3 lg:items-stretch lg:overflow-hidden lg:pb-0">
         {samsung && (
           <StockCard
             stock={samsung}
@@ -249,12 +251,12 @@ export default function StockDashboard() {
             onIntervalChange={setChartInterval}
           />
         )}
-        <div className="min-h-0 lg:overflow-hidden">
+        <div className="lg:min-h-0 lg:overflow-hidden">
           <ComparisonPanel />
         </div>
       </section>
 
-      <footer className="shrink-0 space-y-0.5 pb-1 text-center text-[11px] text-slate-600">
+      <footer className="shrink-0 space-y-0.5 pb-2 text-center text-[11px] text-slate-600">
         <p>
           Bybit SAMSUNG·SKHYNIX·SKHY·MU · 네이버 KRX/NXT · 업비트 환율 ·{" "}
           {headerLabel} · ₩{formatRate(usdKrwRate)}

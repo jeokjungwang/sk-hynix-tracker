@@ -8,7 +8,7 @@ import type { ReactNode } from "react";
  */
 export default function ResponsiveShell({ children }: { children: ReactNode }) {
   return (
-    <div className="mx-auto h-full w-full min-h-0 overflow-hidden">
+    <div className="mx-auto h-full w-full min-h-0 overflow-y-auto overscroll-y-contain lg:overflow-hidden">
       {children}
     </div>
   );
