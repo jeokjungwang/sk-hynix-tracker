@@ -255,7 +255,7 @@ export default function TickerChart({
         className="h-full w-full cursor-grab touch-pan-x active:cursor-grabbing"
         title="캔들스틱 · 좌우 드래그 · 휠 줌"
       />
-      <p className="pointer-events-none absolute left-2 top-2 z-10 rounded bg-slate-950/75 px-2 py-1 text-[10px] font-medium tracking-wide text-slate-400">
+      <p className="chart-hint pointer-events-none absolute left-2 top-2 z-10">
         ← 드래그 과거 · 휠 줌
       </p>
     </div>
