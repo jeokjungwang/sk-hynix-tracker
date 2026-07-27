@@ -3,9 +3,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   applyTickToCandles,
+  historyDaysForInterval,
   mergeCandles,
   scaleCandles,
   type CandlePoint,
+  type ChartInterval,
 } from "@/lib/candles";
 import { fetchBybitJson } from "@/lib/bybitFetch";
 import {
@@ -59,12 +61,12 @@ export type StockDashboardState = {
   stocks: StockQuote[];
   usdKrwRate: number;
   preferredSpotSource: SpotSource;
+  chartInterval: ChartInterval;
+  setChartInterval: (interval: ChartInterval) => void;
 };
 
 const BYBIT_WS_URL = "wss://stream.bybit.com/v5/public/linear";
 const REFRESH_MS = 10_000;
-const HISTORY_DAYS = 14;
-const HISTORY_INTERVAL = "5";
 const RECONNECT_BASE_MS = 1000;
 const RECONNECT_MAX_MS = 30_000;
 
@@ -100,7 +102,10 @@ export function useStockDashboard(): StockDashboardState {
     () => resolveSpotSource()
   );
   const [histories, setHistories] = useState<HistoryMap>(emptyHistoryMap);
+  const [chartInterval, setChartIntervalState] =
+    useState<ChartInterval>("5");
 
+  const chartIntervalRef = useRef<ChartInterval>("5");
   const lastPricesRef = useRef<PriceMap>(emptyPriceMap());
   const usdKrwRateRef = useRef(0);
   const lastTickAtRef = useRef<Record<string, number>>(
@@ -127,28 +132,35 @@ export function useStockDashboard(): StockDashboardState {
     return map;
   }, []);
 
-  /** Update / open the current 5m USDT candle from a live trade */
+  /** Update / open the current candle bucket from a live trade */
   const sampleChart = (stockId: string, usdtPrice: number) => {
     if (usdtPrice <= 0) return;
     const nowSec = Math.floor(Date.now() / 1000);
-    // Throttle React updates to ~1/sec while still folding into 5m OHLC
+    // Throttle React updates to ~1/sec while still folding into OHLC
     if (nowSec <= (lastTickAtRef.current[stockId] ?? 0)) return;
     lastTickAtRef.current[stockId] = nowSec;
+    const interval = chartIntervalRef.current;
     setHistories((prev) => {
-      const merged = applyTickToCandles(prev[stockId] ?? [], usdtPrice, nowSec);
+      const merged = applyTickToCandles(
+        prev[stockId] ?? [],
+        usdtPrice,
+        nowSec,
+        interval
+      );
       const next = { ...prev, [stockId]: merged };
       historiesRef.current = next;
       const stock = STOCKS.find((s) => s.id === stockId);
-      if (stock) saveCachedKlines(stock.bybitTicker, merged);
+      if (stock) saveCachedKlines(stock.bybitTicker, merged, interval);
       return next;
     });
   };
 
   const fetchKlines = async (stock: StockMeta, endMs?: number) => {
+    const interval = chartIntervalRef.current;
     return fetchKlinesClient({
       symbol: stock.bybitTicker,
-      interval: HISTORY_INTERVAL,
-      days: HISTORY_DAYS,
+      interval,
+      days: historyDaysForInterval(interval),
       endMs,
     });
   };
@@ -157,30 +169,43 @@ export function useStockDashboard(): StockDashboardState {
     historiesRef.current = histories;
   }, [histories]);
 
-  // Restore cached candles immediately (survives remount / refresh)
+  const setChartInterval = (interval: ChartInterval) => {
+    if (interval === chartIntervalRef.current) return;
+    chartIntervalRef.current = interval;
+    setChartIntervalState(interval);
+    setHistories(emptyHistoryMap());
+    historiesRef.current = emptyHistoryMap();
+    for (const stock of STOCKS) {
+      historyLoadedRef.current[stock.id] = false;
+      historyLoadingRef.current[stock.id] = false;
+    }
+  };
+
+  // Restore cached candles for current interval
   useEffect(() => {
+    const interval = chartInterval;
     const next = emptyHistoryMap();
     let hasAny = false;
     for (const stock of STOCKS) {
-      const cached = loadCachedKlines(stock.bybitTicker);
+      const cached = loadCachedKlines(stock.bybitTicker, interval);
       if (cached.length > 0) {
         next[stock.id] = cached;
         hasAny = true;
-        historyLoadedRef.current[stock.id] = true;
       }
     }
     if (hasAny) {
       historiesRef.current = next;
       setHistories(next);
     }
-  }, []);
+  }, [chartInterval]);
 
-  /** Datafeed-style getBars: load / prepend historical 5m candles (max 14d) */
+  /** Datafeed-style getBars: load / prepend historical candles */
   const getBarsForStock = async (stockId: string) => {
     const stock = STOCKS.find((s) => s.id === stockId);
     if (!stock || historyLoadingRef.current[stockId]) return;
 
     historyLoadingRef.current[stockId] = true;
+    const interval = chartIntervalRef.current;
     try {
       const existing = historiesRef.current[stockId] ?? [];
       const oldestSec = existing[0]?.time;
@@ -193,7 +218,7 @@ export function useStockDashboard(): StockDashboardState {
       setHistories((prev) => {
         const merged = mergeCandles(prev[stockId] ?? [], bars);
         historiesRef.current = { ...prev, [stockId]: merged };
-        saveCachedKlines(stock.bybitTicker, merged);
+        saveCachedKlines(stock.bybitTicker, merged, interval);
         return { ...prev, [stockId]: merged };
       });
       historyLoadedRef.current[stockId] = true;
@@ -204,22 +229,27 @@ export function useStockDashboard(): StockDashboardState {
     }
   };
 
-  // Initial historical load (load_back_data)
+  // Historical load whenever interval changes
   useEffect(() => {
     let cancelled = false;
+    const interval = chartInterval;
 
     const loadAll = async () => {
       await Promise.all(
         STOCKS.map(async (stock) => {
           historyLoadingRef.current[stock.id] = true;
           try {
-            const bars = await fetchKlines(stock);
+            const bars = await fetchKlinesClient({
+              symbol: stock.bybitTicker,
+              interval,
+              days: historyDaysForInterval(interval),
+            });
             if (cancelled || bars.length === 0) return;
             setHistories((prev) => {
               const merged = mergeCandles(prev[stock.id] ?? [], bars);
               const next = { ...prev, [stock.id]: merged };
               historiesRef.current = next;
-              saveCachedKlines(stock.bybitTicker, merged);
+              saveCachedKlines(stock.bybitTicker, merged, interval);
               return next;
             });
             historyLoadedRef.current[stock.id] = true;
@@ -239,8 +269,7 @@ export function useStockDashboard(): StockDashboardState {
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount once
-  }, []);
+  }, [chartInterval]);
 
   // Upbit KRW-USDT rate
   useEffect(() => {
@@ -517,5 +546,5 @@ export function useStockDashboard(): StockDashboardState {
     };
   });
 
-  return { stocks, usdKrwRate, preferredSpotSource };
+  return { stocks, usdKrwRate, preferredSpotSource, chartInterval, setChartInterval };
 }

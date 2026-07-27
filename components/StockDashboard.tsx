@@ -8,6 +8,10 @@ import {
   useStockDashboard,
   type StockQuote,
 } from "@/hooks/useStockDashboard";
+import {
+  CHART_INTERVALS,
+  type ChartInterval,
+} from "@/lib/candles";
 import type { SpotLabel } from "@/lib/marketSession";
 
 function formatKrw(value: number): string {
@@ -71,87 +75,113 @@ function SourceBadge({ label }: { label: SpotLabel }) {
   );
 }
 
+function IntervalTabs({
+  value,
+  onChange,
+}: {
+  value: ChartInterval;
+  onChange: (next: ChartInterval) => void;
+}) {
+  return (
+    <div className="inline-flex rounded-lg border border-slate-700 bg-slate-950/60 p-0.5">
+      {CHART_INTERVALS.map((item) => {
+        const active = item.id === value;
+        return (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => onChange(item.id)}
+            className={`rounded-md px-2.5 py-1 text-[11px] font-semibold transition ${
+              active
+                ? "bg-sky-500/20 text-sky-300"
+                : "text-slate-400 hover:text-slate-200"
+            }`}
+          >
+            {item.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function StockCard({
   stock,
   usdKrwRate,
+  chartInterval,
+  onIntervalChange,
 }: {
   stock: StockQuote;
   usdKrwRate: number;
+  chartInterval: ChartInterval;
+  onIntervalChange: (next: ChartInterval) => void;
 }) {
   const hasFutures = stock.lastPrice > 0 && stock.futuresKrw > 0;
   const hasSpot = stock.spotPrice > 0;
   const hasBasis = hasFutures && hasSpot;
   const hasChartData = stock.priceHistory.length > 0;
+  const intervalLabel =
+    CHART_INTERVALS.find((i) => i.id === chartInterval)?.label ?? "5분봉";
 
   return (
-    <article className="flex min-w-0 flex-col gap-3 rounded-2xl border border-slate-800 bg-slate-900/70 p-3.5 backdrop-blur">
-      <header className="flex items-start justify-between gap-2">
+    <article className="flex min-h-0 min-w-0 flex-col gap-2 rounded-2xl border border-slate-800 bg-slate-900/70 p-3 backdrop-blur lg:overflow-hidden">
+      <header className="flex shrink-0 items-start justify-between gap-2">
         <div className="min-w-0 space-y-0.5">
           <p className="truncate text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
             {stock.bybitTicker} · {stock.naverCode}
           </p>
-          <h2 className="truncate text-xl font-bold tracking-tight text-slate-50">
+          <h2 className="truncate text-lg font-bold tracking-tight text-slate-50 sm:text-xl">
             {stock.name}
           </h2>
         </div>
         <SourceBadge label={stock.spotLabel} />
       </header>
 
-      <div className="rounded-xl border border-slate-800/80 bg-slate-950/40 px-3 py-3">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
-          선물 환산가 (KRW)
-        </p>
-        <p className="mt-1 font-mono text-[1.75rem] font-bold leading-none tracking-tight text-white">
+      <div className="shrink-0 rounded-xl border border-slate-800/80 bg-slate-950/40 px-3 py-2.5">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+            선물 환산가 (KRW)
+          </p>
+          <p className="font-mono text-[11px] font-medium text-slate-400">
+            현물: {hasSpot ? formatKrw(stock.spotPrice) : "-"}
+            <span className="mx-1 text-slate-600">/</span>
+            괴리율:{" "}
+            <span
+              className={
+                !hasBasis
+                  ? "text-slate-500"
+                  : stock.basis >= 0
+                    ? "text-red-400"
+                    : "text-blue-400"
+              }
+            >
+              {formatBasis(stock.basis, hasBasis)}
+            </span>
+          </p>
+        </div>
+        <p className="mt-1 font-mono text-2xl font-bold leading-none tracking-tight text-white">
           {formatKrw(stock.futuresKrw)}
         </p>
-        <p className="mt-1.5 font-mono text-xs font-medium text-yellow-400/80">
-          {hasFutures ? formatUsdt(stock.lastPrice) : "-"}
-        </p>
-        <p className="mt-0.5 font-mono text-xs font-medium text-sky-300">
-          ₩{formatRate(usdKrwRate)}
+        <p className="mt-1 font-mono text-xs font-medium text-slate-400">
+          <span className="text-yellow-400/80">
+            {hasFutures ? formatUsdt(stock.lastPrice) : "-"}
+          </span>
+          <span className="mx-1.5 text-slate-600">·</span>
+          <span className="text-sky-300">₩{formatRate(usdKrwRate)}</span>
         </p>
         {!hasFutures && <Hint>가격 불러오는 중...</Hint>}
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
-        <div className="rounded-xl border border-slate-800/80 bg-slate-950/40 px-3 py-3">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
-            현물가
-          </p>
-          <p className="mt-1 font-mono text-xl font-bold leading-tight text-slate-50">
-            {formatKrw(stock.spotPrice)}
-          </p>
-          {!hasSpot && <Hint>불러오는 중...</Hint>}
-        </div>
-
-        <div className="rounded-xl border border-slate-800/80 bg-slate-950/40 px-3 py-3">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
-            괴리율
-          </p>
-          <p
-            className={`mt-1 font-mono text-xl font-bold leading-tight ${
-              !hasBasis
-                ? "text-slate-500"
-                : stock.basis >= 0
-                  ? "text-red-400"
-                  : "text-blue-400"
-            }`}
-          >
-            {formatBasis(stock.basis, hasBasis)}
-          </p>
-          {!hasBasis && <Hint>불러오는 중...</Hint>}
-        </div>
-      </div>
-
-      <div className="min-h-0 flex-1 overflow-hidden rounded-xl border border-slate-800/80 bg-slate-950/40">
-        <div className="border-b border-slate-800 px-3 py-2">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-slate-800/80 bg-slate-950/40">
+        <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-slate-800 px-3 py-2">
           <p className="text-[11px] font-semibold text-slate-300">
-            선물 환산가 차트 · 5분봉
+            선물 환산가 차트 · {intervalLabel}
           </p>
+          <IntervalTabs value={chartInterval} onChange={onIntervalChange} />
         </div>
-        <div className="flex h-[220px] items-center justify-center p-1.5 sm:h-[200px] lg:h-[200px]">
+        <div className="flex min-h-[160px] flex-1 items-center justify-center p-1.5 lg:min-h-0">
           {hasChartData ? (
-            <div className="h-full w-full min-w-0">
+            <div className="h-full w-full min-h-0 min-w-0">
               <TickerChart
                 data={stock.priceHistory}
                 loadBackData={stock.loadBackData}
@@ -168,7 +198,13 @@ function StockCard({
 }
 
 export default function StockDashboard() {
-  const { stocks, usdKrwRate, preferredSpotSource } = useStockDashboard();
+  const {
+    stocks,
+    usdKrwRate,
+    preferredSpotSource,
+    chartInterval,
+    setChartInterval,
+  } = useStockDashboard();
   const headerLabel: SpotLabel =
     preferredSpotSource === "NXT" ? "NXT" : "KRX";
 
@@ -176,8 +212,8 @@ export default function StockDashboard() {
   const hynix = stocks.find((s) => s.id === "hynix");
 
   return (
-    <div className="flex flex-col gap-4">
-      <header className="flex flex-col gap-3 pb-0.5 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+    <div className="flex h-full min-h-0 flex-col gap-3 overflow-y-auto lg:overflow-hidden">
+      <header className="flex shrink-0 flex-col gap-3 pb-0.5 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
         <div className="min-w-0 space-y-1.5 pr-12 lg:pr-0">
           <div className="flex flex-wrap items-center gap-2">
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
@@ -195,18 +231,30 @@ export default function StockDashboard() {
         <MarketClocks />
       </header>
 
-      {/* Mobile: 세로 1열 · Desktop wide: 3열 */}
-      <section className="flex flex-col gap-3 min-[1100px]:grid min-[1100px]:grid-cols-3 min-[1100px]:items-stretch">
+      {/* Mobile: 세로 스크롤 · PC: 3열 + 높이 꽉 채움(창 줄이면 차트도 축소) */}
+      <section className="flex min-h-0 flex-1 flex-col gap-3 lg:grid lg:grid-cols-3 lg:items-stretch lg:overflow-hidden">
         {samsung && (
-          <StockCard stock={samsung} usdKrwRate={usdKrwRate} />
+          <StockCard
+            stock={samsung}
+            usdKrwRate={usdKrwRate}
+            chartInterval={chartInterval}
+            onIntervalChange={setChartInterval}
+          />
         )}
         {hynix && (
-          <StockCard stock={hynix} usdKrwRate={usdKrwRate} />
+          <StockCard
+            stock={hynix}
+            usdKrwRate={usdKrwRate}
+            chartInterval={chartInterval}
+            onIntervalChange={setChartInterval}
+          />
         )}
-        <ComparisonPanel />
+        <div className="min-h-0 lg:overflow-hidden">
+          <ComparisonPanel />
+        </div>
       </section>
 
-      <footer className="space-y-0.5 pb-1 text-center text-[11px] text-slate-600">
+      <footer className="shrink-0 space-y-0.5 pb-1 text-center text-[11px] text-slate-600">
         <p>
           Bybit SAMSUNG·SKHYNIX·SKHY·MU · 네이버 KRX/NXT · 업비트 환율 ·{" "}
           {headerLabel} · ₩{formatRate(usdKrwRate)}

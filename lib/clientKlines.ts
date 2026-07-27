@@ -4,7 +4,14 @@ const BINANCE_KLINE_URL = "https://fapi.binance.com/fapi/v1/klines";
 const BYBIT_KLINE_URL = "https://api.bybit.com/v5/market/kline";
 const PAGE_LIMIT = 1000;
 const MAX_BARS = 4500;
-const MAX_DAYS = 14;
+const MAX_DAYS = 365 * 5;
+
+function toBinanceInterval(interval: string): string {
+  if (interval === "D") return "1d";
+  if (interval === "M") return "1M";
+  if (/^\d+$/.test(interval)) return `${interval}m`;
+  return interval;
+}
 
 type BinanceKlineRow = [
   number,
@@ -19,11 +26,6 @@ type BybitKlineResponse = {
   retCode?: number;
   result?: { list?: string[][] };
 };
-
-function toBinanceInterval(interval: string): string {
-  if (/^\d+$/.test(interval)) return `${interval}m`;
-  return interval;
-}
 
 function parseCandle(
   startMs: number,
@@ -221,10 +223,17 @@ export async function fetchKlinesClient(
 
 const STORAGE_PREFIX = "sk-tracker-klines-v1:";
 
-export function loadCachedKlines(symbol: string): CandlePoint[] {
+function cacheKey(symbol: string, interval: string): string {
+  return `${STORAGE_PREFIX}${symbol.toUpperCase()}:${interval}`;
+}
+
+export function loadCachedKlines(
+  symbol: string,
+  interval = "5"
+): CandlePoint[] {
   if (typeof window === "undefined") return [];
   try {
-    const raw = sessionStorage.getItem(STORAGE_PREFIX + symbol.toUpperCase());
+    const raw = sessionStorage.getItem(cacheKey(symbol, interval));
     if (!raw) return [];
     const parsed = JSON.parse(raw) as CandlePoint[];
     if (!Array.isArray(parsed)) return [];
@@ -234,12 +243,16 @@ export function loadCachedKlines(symbol: string): CandlePoint[] {
   }
 }
 
-export function saveCachedKlines(symbol: string, bars: CandlePoint[]): void {
+export function saveCachedKlines(
+  symbol: string,
+  bars: CandlePoint[],
+  interval = "5"
+): void {
   if (typeof window === "undefined") return;
   try {
     const trimmed = dedupeSort(bars).slice(-MAX_BARS);
     sessionStorage.setItem(
-      STORAGE_PREFIX + symbol.toUpperCase(),
+      cacheKey(symbol, interval),
       JSON.stringify(trimmed)
     );
   } catch {

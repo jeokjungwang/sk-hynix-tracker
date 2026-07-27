@@ -31,12 +31,12 @@ export default function ComparisonPanel() {
   const { indexedPoints, moves, spreads, ready } = useComparisonDashboard();
 
   return (
-    <article className="flex min-w-0 flex-col gap-3 rounded-2xl border border-slate-800 bg-slate-900/70 p-3.5 backdrop-blur">
-      <header className="space-y-0.5">
+    <article className="flex h-full min-h-0 min-w-0 flex-col gap-2 rounded-2xl border border-slate-800 bg-slate-900/70 p-3 backdrop-blur lg:overflow-hidden">
+      <header className="shrink-0 space-y-0.5">
         <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
           Slope · Relative Move
         </p>
-        <h2 className="text-xl font-bold tracking-tight text-slate-50">
+        <h2 className="text-lg font-bold tracking-tight text-slate-50 sm:text-xl">
           본주 · ADR · MU
         </h2>
         <p className="text-[11px] leading-snug text-slate-400">
@@ -44,7 +44,7 @@ export default function ComparisonPanel() {
         </p>
       </header>
 
-      <div className="space-y-1.5">
+      <div className="shrink-0 space-y-1.5">
         {COMPARE_SERIES.map((series) => {
           const move = moves[series.id];
           return (
@@ -91,7 +91,7 @@ export default function ComparisonPanel() {
         })}
       </div>
 
-      <div className="grid grid-cols-3 gap-1.5">
+      <div className="grid shrink-0 grid-cols-3 gap-1.5">
         <div className="rounded-lg border border-slate-800/80 bg-slate-950/40 px-2 py-2 text-center">
           <p className="text-[9px] font-semibold uppercase tracking-wide text-slate-500">
             본주↔ADR
@@ -124,13 +124,13 @@ export default function ComparisonPanel() {
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-hidden rounded-xl border border-slate-800/80 bg-slate-950/40">
-        <div className="border-b border-slate-800 px-3 py-2">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-slate-800/80 bg-slate-950/40">
+        <div className="shrink-0 border-b border-slate-800 px-3 py-2">
           <p className="text-[11px] font-semibold text-slate-300">
             24시간 기울기 비교 · 출발 0%
           </p>
         </div>
-        <div className="flex h-[200px] items-center justify-center p-1.5">
+        <div className="flex min-h-[160px] flex-1 items-center justify-center p-1.5 lg:min-h-0">
           {ready ? (
             <ComparisonChart data={indexedPoints} />
           ) : (

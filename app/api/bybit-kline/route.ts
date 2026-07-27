@@ -4,7 +4,7 @@ import { fetchBybitJson } from "@/lib/bybitFetch";
 
 const BYBIT_KLINE_URL = "https://api.bybit.com/v5/market/kline";
 const BINANCE_KLINE_URL = "https://fapi.binance.com/fapi/v1/klines";
-const MAX_DAYS = 14;
+const MAX_DAYS = 365 * 5;
 const PAGE_LIMIT = 1000;
 const MAX_BARS = 4500;
 
@@ -204,6 +204,7 @@ export async function GET(request: NextRequest) {
     "120",
     "240",
     "D",
+    "M",
   ]);
   if (!allowedIntervals.has(interval)) {
     return NextResponse.json({ error: "지원하지 않는 interval" }, { status: 400 });

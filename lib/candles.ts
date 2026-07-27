@@ -8,7 +8,19 @@ export type CandlePoint = {
   close: number;
 };
 
-export const CANDLE_INTERVAL_SEC = 5 * 60; // 5-minute candles
+/** App chart intervals (Bybit-style codes) */
+export type ChartInterval = "5" | "D" | "M";
+
+export const CHART_INTERVALS: readonly {
+  id: ChartInterval;
+  label: string;
+}[] = [
+  { id: "5", label: "5분봉" },
+  { id: "D", label: "일봉" },
+  { id: "M", label: "월봉" },
+] as const;
+
+export const CANDLE_INTERVAL_SEC = 5 * 60;
 export const MAX_CANDLES = 5000;
 
 export function candleOpenTime(
@@ -16,6 +28,30 @@ export function candleOpenTime(
   intervalSec = CANDLE_INTERVAL_SEC
 ): number {
   return Math.floor(unixSec / intervalSec) * intervalSec;
+}
+
+/** Bucket open time for 5m / day / month (UTC) */
+export function bucketOpenTime(
+  unixSec: number,
+  interval: ChartInterval
+): number {
+  if (interval === "5") return candleOpenTime(unixSec, CANDLE_INTERVAL_SEC);
+
+  const d = new Date(unixSec * 1000);
+  if (interval === "D") {
+    return Math.floor(
+      Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()) / 1000
+    );
+  }
+  return Math.floor(
+    Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1) / 1000
+  );
+}
+
+export function historyDaysForInterval(interval: ChartInterval): number {
+  if (interval === "5") return 14;
+  if (interval === "D") return 365;
+  return 365 * 5;
 }
 
 export function isValidCandle(c: CandlePoint): boolean {
@@ -50,15 +86,16 @@ export function mergeCandles(
   return merged.length > MAX_CANDLES ? merged.slice(-MAX_CANDLES) : merged;
 }
 
-/** Apply live trade into the current 5m candle bucket */
+/** Apply live trade into the current candle bucket */
 export function applyTickToCandles(
   candles: CandlePoint[],
   usdtPrice: number,
-  nowSec = Math.floor(Date.now() / 1000)
+  nowSec = Math.floor(Date.now() / 1000),
+  interval: ChartInterval = "5"
 ): CandlePoint[] {
   if (!Number.isFinite(usdtPrice) || usdtPrice <= 0) return candles;
 
-  const bucket = candleOpenTime(nowSec);
+  const bucket = bucketOpenTime(nowSec, interval);
   const last = candles[candles.length - 1];
 
   if (last && last.time === bucket) {
