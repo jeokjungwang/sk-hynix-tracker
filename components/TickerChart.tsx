@@ -5,11 +5,12 @@ import {
   CandlestickSeries,
   ColorType,
   createChart,
+  TickMarkType,
   type IChartApi,
   type ISeriesApi,
   type Time,
 } from "lightweight-charts";
-import type { CandlePoint } from "@/lib/candles";
+import type { CandlePoint, ChartInterval } from "@/lib/candles";
 
 export type { CandlePoint };
 /** @deprecated use CandlePoint — kept for older imports */
@@ -17,11 +18,63 @@ export type PricePoint = CandlePoint;
 
 type TickerChartProps = {
   data: CandlePoint[];
+  interval?: ChartInterval;
   loadBackData?: boolean;
   /** When true (daily/monthly), fit all bars into the visible width */
   fitAll?: boolean;
   onNeedBars?: () => void | Promise<void>;
 };
+
+/** Keep ≤8 chars so lightweight-charts tick labels don't overlap */
+function formatTickMark(time: Time, tickMarkType: TickMarkType): string {
+  let y: number;
+  let m: number;
+  let d: number;
+  let hh = 0;
+  let mm = 0;
+
+  if (typeof time === "string") {
+    const [ys, ms, ds] = time.split("-");
+    y = Number(ys);
+    m = Number(ms);
+    d = Number(ds);
+  } else if (typeof time === "object") {
+    y = time.year;
+    m = time.month;
+    d = time.day;
+  } else {
+    const date = new Date(time * 1000);
+    y = date.getUTCFullYear();
+    m = date.getUTCMonth() + 1;
+    d = date.getUTCDate();
+    hh = date.getUTCHours();
+    mm = date.getUTCMinutes();
+  }
+
+  switch (tickMarkType) {
+    case TickMarkType.Year:
+      return String(y);
+    case TickMarkType.Month:
+      return `${m}월`;
+    case TickMarkType.DayOfMonth:
+      return `${m}/${d}`;
+    case TickMarkType.Time:
+    case TickMarkType.TimeWithSeconds:
+      return `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
+    default:
+      return `${m}/${d}`;
+  }
+}
+
+function toChartTime(unixSec: number, interval: ChartInterval): Time {
+  if (interval === "5") return unixSec as Time;
+  const date = new Date(unixSec * 1000);
+  return {
+    year: date.getUTCFullYear(),
+    month: date.getUTCMonth() + 1,
+    day: date.getUTCDate(),
+  };
+}
 
 function readChartTheme() {
   const styles = getComputedStyle(document.documentElement);
@@ -35,6 +88,7 @@ function readChartTheme() {
 
 export default function TickerChart({
   data,
+  interval = "5",
   loadBackData = true,
   fitAll = false,
   onNeedBars,
@@ -48,6 +102,7 @@ export default function TickerChart({
   const loadingMoreRef = useRef(false);
   const loadBackDataRef = useRef(loadBackData);
   const fitAllRef = useRef(fitAll);
+  const intervalRef = useRef(interval);
 
   useEffect(() => {
     onNeedBarsRef.current = onNeedBars;
@@ -62,6 +117,18 @@ export default function TickerChart({
   }, [fitAll]);
 
   useEffect(() => {
+    intervalRef.current = interval;
+    const chart = chartRef.current;
+    if (!chart) return;
+    chart.applyOptions({
+      timeScale: {
+        timeVisible: interval === "5",
+        secondsVisible: false,
+      },
+    });
+  }, [interval]);
+
+  useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
@@ -73,6 +140,22 @@ export default function TickerChart({
         background: { type: ColorType.Solid, color: "transparent" },
         textColor: theme.text,
         fontFamily: "var(--font-geist-mono), ui-monospace, monospace",
+        fontSize: 11,
+        attributionLogo: false,
+      },
+      localization: {
+        locale: "en-US",
+        dateFormat: "yyyy-MM-dd",
+        timeFormatter: (time: Time) => {
+          if (typeof time === "object" && "year" in time) {
+            return `${time.year}-${String(time.month).padStart(2, "0")}-${String(time.day).padStart(2, "0")}`;
+          }
+          if (typeof time === "string") return time;
+          const date = new Date(time * 1000);
+          const md = `${date.getUTCMonth() + 1}/${date.getUTCDate()}`;
+          const hm = `${String(date.getUTCHours()).padStart(2, "0")}:${String(date.getUTCMinutes()).padStart(2, "0")}`;
+          return intervalRef.current === "5" ? `${md} ${hm}` : md;
+        },
       },
       grid: {
         vertLines: { color: theme.grid },
@@ -91,18 +174,19 @@ export default function TickerChart({
       },
       rightPriceScale: {
         borderColor: theme.grid,
-        scaleMargins: { top: 0.12, bottom: 0.08 },
+        scaleMargins: { top: 0.12, bottom: 0.14 },
       },
       timeScale: {
         borderColor: theme.grid,
-        timeVisible: true,
+        timeVisible: intervalRef.current === "5",
         secondsVisible: false,
         rightOffset: 4,
         barSpacing: 8,
-        minBarSpacing: 2,
+        minBarSpacing: 3,
         fixLeftEdge: false,
         fixRightEdge: false,
         shiftVisibleRangeOnNewBar: true,
+        tickMarkFormatter: formatTickMark,
       },
       handleScroll: {
         mouseWheel: true,
@@ -231,7 +315,7 @@ export default function TickerChart({
     const candleData = Array.from(unique.values())
       .sort((a, b) => a.time - b.time)
       .map((c) => ({
-        time: c.time as Time,
+        time: toChartTime(c.time, intervalRef.current),
         open: c.open,
         high: c.high,
         low: c.low,
@@ -261,7 +345,7 @@ export default function TickerChart({
     if (followLiveRef.current) {
       chart.timeScale().scrollToRealTime();
     }
-  }, [data]);
+  }, [data, interval]);
 
   return (
     <div className="relative h-full w-full min-h-[200px]">

@@ -182,6 +182,7 @@ function StockCard({
           {hasChartData ? (
             <TickerChart
               data={stock.priceHistory}
+              interval={chartInterval}
               loadBackData={stock.loadBackData}
               fitAll={chartInterval === "D" || chartInterval === "M"}
               onNeedBars={stock.getBars}
