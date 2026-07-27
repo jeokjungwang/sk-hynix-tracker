@@ -149,7 +149,7 @@ function StockCard({
             선물 환산가 차트 · 5분봉
           </p>
         </div>
-        <div className="flex h-[200px] items-center justify-center p-1.5">
+        <div className="flex h-[220px] items-center justify-center p-1.5 sm:h-[200px] lg:h-[200px]">
           {hasChartData ? (
             <div className="h-full w-full min-w-0">
               <TickerChart
@@ -172,17 +172,20 @@ export default function StockDashboard() {
   const headerLabel: SpotLabel =
     preferredSpotSource === "NXT" ? "NXT" : "KRX";
 
+  const samsung = stocks.find((s) => s.id === "samsung");
+  const hynix = stocks.find((s) => s.id === "hynix");
+
   return (
     <div className="flex flex-col gap-4">
-      <header className="flex items-start justify-between gap-4 pb-0.5">
-        <div className="min-w-0 space-y-1.5">
+      <header className="flex flex-col gap-3 pb-0.5 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+        <div className="min-w-0 space-y-1.5 pr-12 lg:pr-0">
           <div className="flex flex-wrap items-center gap-2">
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
               Multi-Stock · Bybit Futures · Naver Spot
             </p>
             <SourceBadge label={headerLabel} />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-50">
+          <h1 className="text-xl font-bold tracking-tight text-slate-50 sm:text-2xl">
             삼성전자 SK하이닉스 24시간 시장현황
           </h1>
           <p className="text-sm font-medium text-sky-400">
@@ -192,21 +195,21 @@ export default function StockDashboard() {
         <MarketClocks />
       </header>
 
-      <section className="grid grid-cols-3 items-stretch gap-3">
-        {stocks.map((stock) => (
-          <StockCard
-            key={stock.id}
-            stock={stock}
-            usdKrwRate={usdKrwRate}
-          />
-        ))}
+      {/* Mobile: vertical stack · Desktop: 3-column broadcast */}
+      <section className="flex flex-col gap-3 lg:grid lg:grid-cols-3 lg:items-stretch">
+        {samsung && (
+          <StockCard stock={samsung} usdKrwRate={usdKrwRate} />
+        )}
+        {hynix && (
+          <StockCard stock={hynix} usdKrwRate={usdKrwRate} />
+        )}
         <ComparisonPanel />
       </section>
 
       <footer className="space-y-0.5 pb-1 text-center text-[11px] text-slate-600">
         <p>
-          Bybit SAMSUNG·SKHYNIX·SKHY·MU · 네이버 KRX/NXT · 업비트 환율 · {headerLabel} · ₩
-          {formatRate(usdKrwRate)}
+          Bybit SAMSUNG·SKHYNIX·SKHY·MU · 네이버 KRX/NXT · 업비트 환율 ·{" "}
+          {headerLabel} · ₩{formatRate(usdKrwRate)}
         </p>
       </footer>
     </div>
