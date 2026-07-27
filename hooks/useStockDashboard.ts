@@ -135,6 +135,8 @@ export function useStockDashboard(): StockDashboardState {
   /** Update / open the current candle bucket from a live trade */
   const sampleChart = (stockId: string, usdtPrice: number) => {
     if (usdtPrice <= 0) return;
+    // Wait for kline history so we don't append an orphan tip on a stale series
+    if (!historyLoadedRef.current[stockId]) return;
     const nowSec = Math.floor(Date.now() / 1000);
     // Throttle React updates to ~1/sec while still folding into OHLC
     if (nowSec <= (lastTickAtRef.current[stockId] ?? 0)) return;
@@ -238,6 +240,7 @@ export function useStockDashboard(): StockDashboardState {
       await Promise.all(
         STOCKS.map(async (stock) => {
           historyLoadingRef.current[stock.id] = true;
+          historyLoadedRef.current[stock.id] = false;
           try {
             const bars = await fetchKlinesClient({
               symbol: stock.bybitTicker,
@@ -245,11 +248,21 @@ export function useStockDashboard(): StockDashboardState {
               days: historyDaysForInterval(interval),
             });
             if (cancelled || bars.length === 0) return;
+            // Replace cache with fresh exchange history (avoids gapped orphan tips)
+            const live = lastPricesRef.current[stock.id] ?? 0;
+            const withLive =
+              live > 0
+                ? applyTickToCandles(
+                    bars,
+                    live,
+                    Math.floor(Date.now() / 1000),
+                    interval
+                  )
+                : bars;
             setHistories((prev) => {
-              const merged = mergeCandles(prev[stock.id] ?? [], bars);
-              const next = { ...prev, [stock.id]: merged };
+              const next = { ...prev, [stock.id]: withLive };
               historiesRef.current = next;
-              saveCachedKlines(stock.bybitTicker, merged, interval);
+              saveCachedKlines(stock.bybitTicker, withLive, interval);
               return next;
             });
             historyLoadedRef.current[stock.id] = true;

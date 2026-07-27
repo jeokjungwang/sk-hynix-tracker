@@ -188,7 +188,7 @@ export type FetchKlinesOptions = {
 
 /**
  * Load OHLC history from the browser (avoids Vercel IP blocks).
- * Tries Binance → Bybit → same-origin API route.
+ * Prefer Bybit (same as live ticker) → Binance → same-origin API route.
  */
 export async function fetchKlinesClient(
   options: FetchKlinesOptions
@@ -201,8 +201,8 @@ export async function fetchKlinesClient(
   const cursorEnd = options.endMs ?? now;
 
   const attempts = [
-    () => fetchBinanceBars(symbol, interval, rangeStart, cursorEnd),
     () => fetchBybitBars(symbol, interval, rangeStart, cursorEnd),
+    () => fetchBinanceBars(symbol, interval, rangeStart, cursorEnd),
     () => fetchViaApiRoute(symbol, interval, days, options.endMs),
   ];
 
@@ -221,7 +221,14 @@ export async function fetchKlinesClient(
     : new Error("캔들 히스토리 조회 실패");
 }
 
-const STORAGE_PREFIX = "sk-tracker-klines-v1:";
+const STORAGE_PREFIX = "sk-tracker-klines-v2:";
+
+/** Drop cache if the newest bar is older than this (seconds) */
+const CACHE_MAX_AGE_SEC: Record<string, number> = {
+  "5": 15 * 60,
+  D: 3 * 24 * 60 * 60,
+  M: 45 * 24 * 60 * 60,
+};
 
 function cacheKey(symbol: string, interval: string): string {
   return `${STORAGE_PREFIX}${symbol.toUpperCase()}:${interval}`;
@@ -237,7 +244,16 @@ export function loadCachedKlines(
     if (!raw) return [];
     const parsed = JSON.parse(raw) as CandlePoint[];
     if (!Array.isArray(parsed)) return [];
-    return dedupeSort(parsed).slice(-MAX_BARS);
+    const bars = dedupeSort(parsed).slice(-MAX_BARS);
+    const last = bars[bars.length - 1];
+    if (!last) return [];
+    const maxAge = CACHE_MAX_AGE_SEC[interval] ?? CACHE_MAX_AGE_SEC["5"];
+    const ageSec = Math.floor(Date.now() / 1000) - last.time;
+    if (ageSec > maxAge) {
+      sessionStorage.removeItem(cacheKey(symbol, interval));
+      return [];
+    }
+    return bars;
   } catch {
     return [];
   }

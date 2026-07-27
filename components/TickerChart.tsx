@@ -326,8 +326,8 @@ export default function TickerChart({
     pointCountRef.current = candleData.length;
     series.setData(candleData);
 
-    // Daily/monthly (or short history): fill the full chart width
-    if (fitAllRef.current || candleData.length <= 200) {
+    // Daily/monthly: show full history width. Intraday: keep a recent window.
+    if (fitAllRef.current) {
       chart.timeScale().fitContent();
       followLiveRef.current = true;
       return;

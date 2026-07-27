@@ -30,6 +30,13 @@ export function candleOpenTime(
   return Math.floor(unixSec / intervalSec) * intervalSec;
 }
 
+/** Candle step in seconds for gap checks */
+export function intervalStepSec(interval: ChartInterval): number {
+  if (interval === "5") return CANDLE_INTERVAL_SEC;
+  if (interval === "D") return 24 * 60 * 60;
+  return 31 * 24 * 60 * 60;
+}
+
 /** Bucket open time for 5m / day / month (UTC) */
 export function bucketOpenTime(
   unixSec: number,
@@ -108,6 +115,12 @@ export function applyTickToCandles(
       close: usdtPrice,
     };
     return [...candles.slice(0, -1), updated].slice(-MAX_CANDLES);
+  }
+
+  // Refuse orphan tip after a multi-bar gap — keeps Y-axis aligned with history
+  if (last && bucket > last.time) {
+    const step = intervalStepSec(interval);
+    if (bucket - last.time > step * 2) return candles;
   }
 
   const opened: CandlePoint = {
