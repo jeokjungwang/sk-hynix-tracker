@@ -83,18 +83,19 @@ function IntervalTabs({
   onChange: (next: ChartInterval) => void;
 }) {
   return (
-    <div className="inline-flex rounded-lg border border-slate-700 bg-slate-950/60 p-0.5">
+    <div className="interval-tabs inline-flex rounded-lg border border-slate-600 bg-slate-800/80 p-0.5">
       {CHART_INTERVALS.map((item) => {
         const active = item.id === value;
         return (
           <button
             key={item.id}
             type="button"
+            data-active={active ? "true" : "false"}
             onClick={() => onChange(item.id)}
-            className={`rounded-md px-2.5 py-1 text-[11px] font-semibold transition ${
+            className={`rounded-md px-2.5 py-1 text-[11px] font-bold transition ${
               active
-                ? "bg-sky-500/20 text-sky-300"
-                : "text-slate-400 hover:text-slate-200"
+                ? "bg-sky-500 text-white"
+                : "text-slate-100 hover:bg-slate-700/80 hover:text-white"
             }`}
           >
             {item.label}

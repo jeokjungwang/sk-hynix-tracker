@@ -155,3 +155,23 @@ html.light .bg-fuchsia-500\/20 {
 html.light .text-fuchsia-200 {
   color: #a21caf !important;
 }
+
+/* Interval tabs: keep readable contrast in light mode */
+html.light .interval-tabs {
+  background-color: #e2e8f0 !important;
+  border-color: #94a3b8 !important;
+}
+
+html.light .interval-tabs button {
+  color: #0f172a !important;
+}
+
+html.light .interval-tabs button:hover {
+  background-color: #cbd5e1 !important;
+  color: #020617 !important;
+}
+
+html.light .interval-tabs button[data-active="true"] {
+  background-color: #0284c7 !important;
+  color: #ffffff !important;
+}
