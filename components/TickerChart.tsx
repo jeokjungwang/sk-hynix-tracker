@@ -18,6 +18,8 @@ export type PricePoint = CandlePoint;
 type TickerChartProps = {
   data: CandlePoint[];
   loadBackData?: boolean;
+  /** When true (daily/monthly), fit all bars into the visible width */
+  fitAll?: boolean;
   onNeedBars?: () => void | Promise<void>;
 };
 
@@ -34,6 +36,7 @@ function readChartTheme() {
 export default function TickerChart({
   data,
   loadBackData = true,
+  fitAll = false,
   onNeedBars,
 }: TickerChartProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -44,6 +47,7 @@ export default function TickerChart({
   const onNeedBarsRef = useRef(onNeedBars);
   const loadingMoreRef = useRef(false);
   const loadBackDataRef = useRef(loadBackData);
+  const fitAllRef = useRef(fitAll);
 
   useEffect(() => {
     onNeedBarsRef.current = onNeedBars;
@@ -52,6 +56,10 @@ export default function TickerChart({
   useEffect(() => {
     loadBackDataRef.current = loadBackData;
   }, [loadBackData]);
+
+  useEffect(() => {
+    fitAllRef.current = fitAll;
+  }, [fitAll]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -234,11 +242,18 @@ export default function TickerChart({
     pointCountRef.current = candleData.length;
     series.setData(candleData);
 
+    // Daily/monthly (or short history): fill the full chart width
+    if (fitAllRef.current || candleData.length <= 200) {
+      chart.timeScale().fitContent();
+      followLiveRef.current = true;
+      return;
+    }
+
     if (prevCount === 0 || candleData.length - prevCount > 20) {
       const visible = Math.min(120, candleData.length);
       chart.timeScale().setVisibleLogicalRange({
         from: Math.max(candleData.length - visible, 0),
-        to: candleData.length + 2,
+        to: candleData.length - 1,
       });
       return;
     }

@@ -2,9 +2,9 @@ import type { CandlePoint } from "@/lib/candles";
 
 const BINANCE_KLINE_URL = "https://fapi.binance.com/fapi/v1/klines";
 const BYBIT_KLINE_URL = "https://api.bybit.com/v5/market/kline";
-const PAGE_LIMIT = 1000;
-const MAX_BARS = 4500;
-const MAX_DAYS = 365 * 5;
+const PAGE_LIMIT = 1500;
+const MAX_BARS = 5000;
+const MAX_DAYS = 365 * 10;
 
 function toBinanceInterval(interval: string): string {
   if (interval === "D") return "1d";
@@ -73,7 +73,7 @@ async function fetchBinanceBars(
   let guard = 0;
   const binanceInterval = toBinanceInterval(interval);
 
-  while (end > rangeStart && collected.length < MAX_BARS && guard < 8) {
+  while (end > rangeStart && collected.length < MAX_BARS && guard < 20) {
     guard += 1;
     const url = new URL(BINANCE_KLINE_URL);
     url.searchParams.set("symbol", symbol);
@@ -120,7 +120,7 @@ async function fetchBybitBars(
   let end = cursorEnd;
   let guard = 0;
 
-  while (end > rangeStart && collected.length < MAX_BARS && guard < 8) {
+  while (end > rangeStart && collected.length < MAX_BARS && guard < 20) {
     guard += 1;
     const url = new URL(BYBIT_KLINE_URL);
     url.searchParams.set("category", "linear");

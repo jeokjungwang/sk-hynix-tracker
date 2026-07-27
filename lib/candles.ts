@@ -50,8 +50,9 @@ export function bucketOpenTime(
 
 export function historyDaysForInterval(interval: ChartInterval): number {
   if (interval === "5") return 14;
-  if (interval === "D") return 365;
-  return 365 * 5;
+  // Pull as far back as exchange listing allows
+  if (interval === "D") return 365 * 3;
+  return 365 * 10;
 }
 
 export function isValidCandle(c: CandlePoint): boolean {
