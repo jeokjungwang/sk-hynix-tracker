@@ -4,7 +4,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 
 export default function Home() {
   return (
-    <main className="h-dvh overflow-hidden px-3 py-3">
+    <main className="h-dvh overflow-y-auto px-3 py-3">
       <ThemeToggle />
       <ResponsiveShell>
         <StockDashboard />

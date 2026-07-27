@@ -45,7 +45,8 @@ export default function ComparisonChart({ data }: ComparisonChartProps) {
 
     const theme = readChartTheme();
     const chart = createChart(container, {
-      autoSize: true,
+      width: Math.max(container.clientWidth, 1),
+      height: Math.max(container.clientHeight, 1),
       layout: {
         background: { type: ColorType.Solid, color: "transparent" },
         textColor: theme.text,
@@ -116,6 +117,15 @@ export default function ComparisonChart({ data }: ComparisonChartProps) {
     };
     chart.timeScale().subscribeVisibleLogicalRangeChange(onRange);
 
+    const resize = () => {
+      const w = container.clientWidth;
+      const h = container.clientHeight;
+      if (w > 0 && h > 0) chart.applyOptions({ width: w, height: h });
+    };
+    resize();
+    const ro = new ResizeObserver(resize);
+    ro.observe(container);
+
     const syncTheme = () => {
       const next = readChartTheme();
       chart.applyOptions({
@@ -147,6 +157,7 @@ export default function ComparisonChart({ data }: ComparisonChartProps) {
 
     return () => {
       mo.disconnect();
+      ro.disconnect();
       chart.timeScale().unsubscribeVisibleLogicalRangeChange(onRange);
       chart.remove();
       chartRef.current = null;
@@ -187,5 +198,5 @@ export default function ComparisonChart({ data }: ComparisonChartProps) {
     }
   }, [data]);
 
-  return <div ref={containerRef} className="h-full w-full min-w-0" />;
+  return <div ref={containerRef} className="h-full min-h-[200px] w-full" />;
 }

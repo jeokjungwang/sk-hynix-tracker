@@ -59,7 +59,8 @@ export default function TickerChart({
 
     const theme = readChartTheme();
     const chart = createChart(container, {
-      autoSize: true,
+      width: Math.max(container.clientWidth, 1),
+      height: Math.max(container.clientHeight, 1),
       layout: {
         background: { type: ColorType.Solid, color: "transparent" },
         textColor: theme.text,
@@ -159,6 +160,15 @@ export default function TickerChart({
     chartRef.current = chart;
     seriesRef.current = series;
 
+    const resize = () => {
+      const w = container.clientWidth;
+      const h = container.clientHeight;
+      if (w > 0 && h > 0) chart.applyOptions({ width: w, height: h });
+    };
+    resize();
+    const ro = new ResizeObserver(resize);
+    ro.observe(container);
+
     const syncTheme = () => {
       const next = readChartTheme();
       chart.applyOptions({
@@ -190,6 +200,7 @@ export default function TickerChart({
 
     return () => {
       mo.disconnect();
+      ro.disconnect();
       chart
         .timeScale()
         .unsubscribeVisibleLogicalRangeChange(onVisibleRangeChange);
@@ -223,7 +234,6 @@ export default function TickerChart({
     pointCountRef.current = candleData.length;
     series.setData(candleData);
 
-    // First load / big history jump: show a readable recent window
     if (prevCount === 0 || candleData.length - prevCount > 20) {
       const visible = Math.min(120, candleData.length);
       chart.timeScale().setVisibleLogicalRange({
@@ -239,13 +249,13 @@ export default function TickerChart({
   }, [data]);
 
   return (
-    <div className="relative h-full w-full">
+    <div className="relative h-full w-full min-h-[200px]">
       <div
         ref={containerRef}
         className="h-full w-full cursor-grab touch-pan-x active:cursor-grabbing"
         title="캔들스틱 · 좌우 드래그 · 휠 줌"
       />
-      <p className="pointer-events-none absolute left-3 top-2 z-10 rounded bg-slate-950/75 px-2 py-1 text-[10px] font-medium tracking-wide text-slate-400">
+      <p className="pointer-events-none absolute left-2 top-2 z-10 rounded bg-slate-950/75 px-2 py-1 text-[10px] font-medium tracking-wide text-slate-400">
         ← 드래그 과거 · 휠 줌
       </p>
     </div>
