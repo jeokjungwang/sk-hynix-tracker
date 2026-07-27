@@ -18,6 +18,7 @@ type FitScaleProps = {
 /**
  * Renders children at a fixed design width, then scales the whole tree
  * down so both width and height fit the viewport — for broadcast / OBS use.
+ * Disabled on narrow viewports so phones get a normal vertical layout.
  */
 export default function FitScale({
   children,
@@ -28,8 +29,20 @@ export default function FitScale({
   const innerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
   const [contentHeight, setContentHeight] = useState(0);
+  const [enabled, setEnabled] = useState(false);
 
   useLayoutEffect(() => {
+    const syncEnabled = () => {
+      setEnabled(window.innerWidth >= 1100);
+    };
+    syncEnabled();
+    window.addEventListener("resize", syncEnabled);
+    return () => window.removeEventListener("resize", syncEnabled);
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!enabled) return;
+
     const outer = outerRef.current;
     const inner = innerRef.current;
     if (!outer || !inner) return;
@@ -43,7 +56,7 @@ export default function FitScale({
       const next = Math.min(
         maxScale,
         availW / designWidth,
-        availH / naturalHeight,
+        availH / naturalHeight
       );
 
       setScale(next);
@@ -61,7 +74,15 @@ export default function FitScale({
       ro.disconnect();
       window.removeEventListener("resize", update);
     };
-  }, [designWidth, maxScale]);
+  }, [designWidth, maxScale, enabled]);
+
+  if (!enabled) {
+    return (
+      <div className="h-full w-full overflow-y-auto overscroll-y-contain">
+        {children}
+      </div>
+    );
+  }
 
   return (
     <div

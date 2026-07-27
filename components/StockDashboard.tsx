@@ -195,8 +195,8 @@ export default function StockDashboard() {
         <MarketClocks />
       </header>
 
-      {/* Mobile: vertical stack · Desktop: 3-column broadcast */}
-      <section className="flex flex-col gap-3 lg:grid lg:grid-cols-3 lg:items-stretch">
+      {/* Mobile: 세로 1열 · Desktop wide: 3열 */}
+      <section className="flex flex-col gap-3 min-[1100px]:grid min-[1100px]:grid-cols-3 min-[1100px]:items-stretch">
         {samsung && (
           <StockCard stock={samsung} usdKrwRate={usdKrwRate} />
         )}
