@@ -95,26 +95,3 @@ export async function fetchYahooChart(
 
   return { price, previousClose, bars };
 }
-
-/** US GDP in billions USD (World Bank annual, fallback cached) */
-export async function fetchUsGdpBillions(): Promise<number> {
-  const FALLBACK_GDP_BILLIONS = 30769.7; // 2025 WB
-
-  try {
-    const res = await fetch(
-      "https://api.worldbank.org/v2/country/US/indicator/NY.GDP.MKTP.CD?format=json&per_page=5&mrnev=1",
-      { next: { revalidate: 86400 } }
-    );
-    if (!res.ok) return FALLBACK_GDP_BILLIONS;
-    const json = (await res.json()) as Array<
-      unknown | Array<{ value?: number | null }>
-    >;
-    const rows = json[1] as Array<{ value?: number | null }> | undefined;
-    const value = rows?.find((r) => typeof r.value === "number" && r.value! > 0)
-      ?.value;
-    if (!value) return FALLBACK_GDP_BILLIONS;
-    return value / 1e9;
-  } catch {
-    return FALLBACK_GDP_BILLIONS;
-  }
-}

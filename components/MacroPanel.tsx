@@ -1,23 +1,32 @@
 "use client";
 
-import MacroMiniChart from "@/components/MacroMiniChart";
 import { useMacroDashboard } from "@/hooks/useMacroDashboard";
-import { MACRO_SERIES, buffettZone } from "@/lib/macro";
+import { MACRO_SERIES, type MacroId } from "@/lib/macro";
 
-function formatValue(id: string, value: number): string {
+function formatValue(id: MacroId, value: number): string {
   if (!value || Number.isNaN(value)) return "-";
-  if (id === "buffett") return `${value.toFixed(1)}%`;
+  if (id === "dollar") {
+    return `₩${Math.round(value).toLocaleString("ko-KR")}`;
+  }
   if (id === "wti") {
     return `$${value.toLocaleString("en-US", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     })}`;
   }
-  if (id === "dollar") {
-    return `₩${value.toLocaleString("ko-KR", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })}`;
+  if (id === "us10y") {
+    return `${value.toFixed(2)}%`;
+  }
+  if (id === "vix") {
+    return value.toFixed(2);
+  }
+  if (id === "copper") {
+    return `$${value.toFixed(3)}`;
+  }
+  if (id === "sox") {
+    return value.toLocaleString("en-US", {
+      maximumFractionDigits: 0,
+    });
   }
   return value.toLocaleString("en-US", {
     minimumFractionDigits: 2,
@@ -25,100 +34,64 @@ function formatValue(id: string, value: number): string {
   });
 }
 
-function formatPct(value: number | null | undefined): string {
+function formatChange(id: MacroId, value: number | null | undefined): string {
   if (value == null || Number.isNaN(value)) return "-";
   const sign = value > 0 ? "+" : "";
+  if (id === "us10y") {
+    return `${sign}${value.toFixed(2)}%p`;
+  }
   return `${sign}${value.toFixed(2)}%`;
 }
 
 function changeTone(value: number | null | undefined): string {
   if (value == null) return "text-[color:var(--label)]";
-  if (Math.abs(value) < 0.05) return "text-[color:var(--muted)]";
+  if (Math.abs(value) < 0.02) return "text-[color:var(--muted)]";
   return value > 0 ? "toss-up" : "toss-down";
 }
 
 export default function MacroPanel() {
-  const { dollar, wti, buffett, ready } = useMacroDashboard();
-
-  const quotes = {
-    dollar,
-    wti,
-    buffett,
-  };
-
-  const zone = buffettZone(buffett.value);
-  const chartSeries = MACRO_SERIES.map((meta) => ({
-    id: meta.id,
-    history: quotes[meta.id].history ?? [],
-  }));
-  const hasChart = chartSeries.some((s) => s.history.length > 2);
+  const { quotes, ready } = useMacroDashboard();
 
   return (
     <article className="toss-card flex min-w-0 flex-col gap-3 p-4">
       <header className="shrink-0 space-y-1">
-        <p className="toss-label">Macro · Dollar · Oil · Valuation</p>
+        <p className="toss-label">Macro Board</p>
         <h2 className="toss-title text-[1.35rem] sm:text-[1.5rem]">
-          원달러 · WTI · 버핏지수
+          국장 매크로
         </h2>
         <p className="text-[13px] font-medium leading-snug text-[color:var(--label)]">
-          원달러 · 원유 · 시총/GDP 밸류에이션
+          원달러 · WTI · 금리 · SOX · 구리 · VIX
         </p>
       </header>
 
-      <div className="shrink-0 space-y-2">
+      <div className="grid grid-cols-2 gap-2.5">
         {MACRO_SERIES.map((meta) => {
           const quote = quotes[meta.id];
           return (
-            <div key={meta.id} className="toss-panel px-3 py-2.5">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex min-w-0 items-center gap-1.5">
-                  <span
-                    className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
-                    style={{ backgroundColor: meta.color }}
-                  />
-                  <span className="truncate text-[13px] font-semibold tracking-tight">
-                    {meta.name}
-                  </span>
-                  {meta.id === "buffett" && (
-                    <span className={`text-[11px] font-semibold ${zone.tone}`}>
-                      {zone.label}
-                    </span>
-                  )}
-                </div>
-                <span className="toss-price shrink-0 text-base">
-                  {formatValue(meta.id, quote.value)}
-                </span>
-              </div>
-              <div className="mt-1.5 flex items-center justify-between gap-2 text-[12px]">
-                <span className="font-medium text-[color:var(--label)]">
-                  {meta.source}
-                </span>
+            <div
+              key={meta.id}
+              className="toss-panel flex min-h-[96px] flex-col justify-between px-3 py-3"
+            >
+              <div className="flex items-center gap-1.5">
                 <span
-                  className={`font-semibold tabular-nums ${changeTone(quote.changePct)}`}
-                >
-                  {formatPct(quote.changePct)}
+                  className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
+                  style={{ backgroundColor: meta.color }}
+                />
+                <span className="truncate text-[13px] font-semibold tracking-tight">
+                  {meta.name}
                 </span>
               </div>
+              <p className="toss-price mt-2 text-[1.65rem] leading-none tracking-tight sm:text-[1.85rem]">
+                {ready ? formatValue(meta.id, quote.value) : "-"}
+              </p>
+              <p
+                className={`mt-2 text-[15px] font-bold tabular-nums ${changeTone(quote.changePct)}`}
+              >
+                {ready ? formatChange(meta.id, quote.changePct) : "-"}
+              </p>
             </div>
           );
         })}
-      </div>
-
-      <div className="toss-panel flex h-[240px] w-full shrink-0 flex-col overflow-hidden">
-        <div className="flex shrink-0 items-center border-b border-[color:var(--border)] px-3 py-2.5">
-          <p className="text-[13px] font-semibold tracking-tight text-[color:var(--foreground)]">
-            상대 변동 · 출발 0%
-          </p>
-        </div>
-        <div className="h-[calc(240px-2.75rem)] w-full p-2">
-          {ready && hasChart ? (
-            <MacroMiniChart series={chartSeries} />
-          ) : (
-            <div className="flex h-full items-center justify-center">
-              <p className="toss-label">매크로 데이터 불러오는 중...</p>
-            </div>
-          )}
-        </div>
       </div>
     </article>
   );

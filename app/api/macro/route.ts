@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { fetchBybitJson } from "@/lib/bybitFetch";
-import { fetchUsGdpBillions, fetchYahooChart } from "@/lib/yahooFinance";
+import { fetchYahooChart } from "@/lib/yahooFinance";
+import {
+  MACRO_SERIES,
+  type MacroId,
+  type MacroQuote,
+} from "@/lib/macro";
 
 type BybitTickerResponse = {
   retCode?: number;
@@ -13,21 +18,68 @@ type BybitTickerResponse = {
   };
 };
 
+function toQuote(
+  id: MacroId,
+  price: number,
+  previousClose: number,
+  opts?: { absoluteChange?: boolean }
+): MacroQuote {
+  let changePct: number | null = null;
+  if (previousClose > 0 && price > 0) {
+    changePct = opts?.absoluteChange
+      ? price - previousClose
+      : ((price - previousClose) / previousClose) * 100;
+  }
+  return { id, value: price, changePct };
+}
+
 /**
- * Macro panel: USD/KRW (Yahoo), WTI (Bybit CLUSDT), Buffett (Wilshire/GDP).
+ * Macro panel: USD/KRW, WTI, US10Y, SOX, Copper, VIX.
  */
 export async function GET() {
   try {
-    const [usdKrw, wtiYahoo, wilshire, gdpBillions, wtiBybit] =
-      await Promise.all([
-        fetchYahooChart("USDKRW=X", "5m", "5d"),
-        fetchYahooChart("CL=F", "5m", "5d").catch(() => null),
-        fetchYahooChart("^W5000", "1d", "3mo"),
-        fetchUsGdpBillions(),
-        fetchBybitJson<BybitTickerResponse>(
-          "https://api.bybit.com/v5/market/tickers?category=linear&symbol=CLUSDT"
-        ).catch(() => null),
-      ]);
+    const yahooMetas = MACRO_SERIES.filter((m) => m.yahooSymbol);
+
+    const [yahooResults, wtiYahoo, wtiBybit] = await Promise.all([
+      Promise.all(
+        yahooMetas.map(async (meta) => {
+          try {
+            const chart = await fetchYahooChart(
+              meta.yahooSymbol!,
+              meta.id === "dollar" ? "5m" : "1d",
+              meta.id === "dollar" ? "5d" : "5d"
+            );
+            return { id: meta.id, chart };
+          } catch (e) {
+            console.error(`[/api/macro] Yahoo 실패 (${meta.yahooSymbol})`, e);
+            return { id: meta.id, chart: null };
+          }
+        })
+      ),
+      fetchYahooChart("CL=F", "5m", "5d").catch(() => null),
+      fetchBybitJson<BybitTickerResponse>(
+        "https://api.bybit.com/v5/market/tickers?category=linear&symbol=CLUSDT"
+      ).catch(() => null),
+    ]);
+
+    const byId = Object.fromEntries(
+      yahooResults.map((row) => [row.id, row.chart])
+    ) as Partial<
+      Record<MacroId, Awaited<ReturnType<typeof fetchYahooChart>> | null>
+    >;
+
+    const quotes: Partial<Record<MacroId, MacroQuote>> = {};
+
+    for (const meta of yahooMetas) {
+      const chart = byId[meta.id];
+      if (!chart || !(chart.price > 0)) continue;
+      quotes[meta.id] = toQuote(
+        meta.id,
+        chart.price,
+        chart.previousClose,
+        { absoluteChange: meta.id === "us10y" }
+      );
+    }
 
     const bybitLast = parseFloat(
       wtiBybit?.result?.list?.[0]?.lastPrice ?? ""
@@ -47,60 +99,20 @@ export async function GET() {
       Number.isFinite(bybitPrev) && bybitPrev > 0
         ? bybitPrev
         : wtiYahoo?.previousClose ?? 0;
-    const wtiChangePct =
-      Number.isFinite(bybitPct)
-        ? bybitPct * 100
-        : wtiPrev > 0
-          ? ((wtiPrice - wtiPrev) / wtiPrev) * 100
-          : null;
-
-    const usdKrwChangePct =
-      usdKrw.previousClose > 0
-        ? ((usdKrw.price - usdKrw.previousClose) / usdKrw.previousClose) * 100
+    const wtiChangePct = Number.isFinite(bybitPct)
+      ? bybitPct * 100
+      : wtiPrev > 0
+        ? ((wtiPrice - wtiPrev) / wtiPrev) * 100
         : null;
 
-    const buffett =
-      gdpBillions > 0 && wilshire.price > 0
-        ? (wilshire.price / gdpBillions) * 100
-        : 0;
-
-    const buffettPrev =
-      gdpBillions > 0 && wilshire.previousClose > 0
-        ? (wilshire.previousClose / gdpBillions) * 100
-        : 0;
-
-    const buffettChangePct =
-      buffettPrev > 0 ? ((buffett - buffettPrev) / buffettPrev) * 100 : null;
-
-    const buffettHistory = wilshire.bars.map((bar) => ({
-      time: bar.time,
-      open: (bar.open / gdpBillions) * 100,
-      high: (bar.high / gdpBillions) * 100,
-      low: (bar.low / gdpBillions) * 100,
-      close: (bar.close / gdpBillions) * 100,
-    }));
+    quotes.wti = {
+      id: "wti",
+      value: wtiPrice,
+      changePct: wtiChangePct,
+    };
 
     return NextResponse.json({
-      dollar: {
-        id: "dollar",
-        value: usdKrw.price,
-        changePct: usdKrwChangePct,
-        history: usdKrw.bars,
-      },
-      wti: {
-        id: "wti",
-        value: wtiPrice,
-        changePct: wtiChangePct,
-        history: wtiYahoo?.bars ?? [],
-      },
-      buffett: {
-        id: "buffett",
-        value: buffett,
-        changePct: buffettChangePct,
-        history: buffettHistory,
-        gdpBillions,
-        wilshire: wilshire.price,
-      },
+      quotes,
       updatedAt: Date.now(),
     });
   } catch (error) {

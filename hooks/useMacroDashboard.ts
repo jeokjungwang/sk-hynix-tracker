@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  applyTickToCandles,
-  mergeCandles,
-  type CandlePoint,
-} from "@/lib/candles";
 import { fetchBybitJson } from "@/lib/bybitFetch";
-import type { MacroId, MacroQuote } from "@/lib/macro";
+import {
+  emptyMacroQuote,
+  MACRO_SERIES,
+  type MacroId,
+  type MacroQuote,
+} from "@/lib/macro";
 
 const BYBIT_WS_URL = "wss://stream.bybit.com/v5/public/linear";
 const REFRESH_MS = 30_000;
@@ -15,38 +15,29 @@ const RECONNECT_BASE_MS = 1000;
 const RECONNECT_MAX_MS = 30_000;
 
 type MacroPayload = {
-  dollar?: MacroQuote;
-  wti?: MacroQuote;
-  buffett?: MacroQuote & { gdpBillions?: number; wilshire?: number };
+  quotes?: Partial<Record<MacroId, MacroQuote>>;
   error?: string;
 };
 
 export type MacroDashboardState = {
-  dollar: MacroQuote;
-  wti: MacroQuote;
-  buffett: MacroQuote & { gdpBillions?: number; wilshire?: number };
+  quotes: Record<MacroId, MacroQuote>;
   ready: boolean;
 };
 
-function emptyQuote(id: MacroId): MacroQuote {
-  return { id, value: 0, changePct: null, history: [] };
+function emptyMap(): Record<MacroId, MacroQuote> {
+  return Object.fromEntries(
+    MACRO_SERIES.map((m) => [m.id, emptyMacroQuote(m.id)])
+  ) as Record<MacroId, MacroQuote>;
 }
 
 export function useMacroDashboard(): MacroDashboardState {
-  const [dollar, setDollar] = useState<MacroQuote | null>(null);
-  const [wti, setWti] = useState<MacroQuote | null>(null);
-  const [buffett, setBuffett] = useState<
-    (MacroQuote & { gdpBillions?: number; wilshire?: number }) | null
-  >(null);
+  const [quotes, setQuotes] = useState<Record<MacroId, MacroQuote>>(emptyMap);
 
-  const wtiHistoryRef = useRef<CandlePoint[]>([]);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectAttemptRef = useRef(0);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const shouldReconnectRef = useRef(true);
-  const lastTickAtRef = useRef(0);
 
-  // Poll Yahoo DXY + Buffett + seed WTI
   useEffect(() => {
     let cancelled = false;
 
@@ -54,20 +45,16 @@ export function useMacroDashboard(): MacroDashboardState {
       try {
         const res = await fetch("/api/macro");
         const data = (await res.json()) as MacroPayload;
-        if (!res.ok || cancelled) return;
+        if (!res.ok || cancelled || !data.quotes) return;
 
-        if (data.dollar) setDollar(data.dollar);
-        if (data.buffett) setBuffett(data.buffett);
-        if (data.wti) {
-          wtiHistoryRef.current = mergeCandles(
-            wtiHistoryRef.current,
-            data.wti.history ?? []
-          );
-          setWti({
-            ...data.wti,
-            history: wtiHistoryRef.current,
-          });
-        }
+        setQuotes((prev) => {
+          const next = { ...prev };
+          for (const meta of MACRO_SERIES) {
+            const q = data.quotes?.[meta.id];
+            if (q && q.value > 0) next[meta.id] = q;
+          }
+          return next;
+        });
       } catch (e) {
         console.error("[useMacroDashboard] /api/macro 실패", e);
       }
@@ -90,23 +77,16 @@ export function useMacroDashboard(): MacroDashboardState {
 
     const applyWti = (price: number, changePct?: number | null) => {
       if (!Number.isFinite(price) || price <= 0) return;
-      const nowSec = Math.floor(Date.now() / 1000);
-      if (nowSec > lastTickAtRef.current) {
-        lastTickAtRef.current = nowSec;
-        wtiHistoryRef.current = applyTickToCandles(
-          wtiHistoryRef.current,
-          price,
-          nowSec
-        );
-      }
-      setWti((prev) => ({
-        id: "wti",
-        value: price,
-        changePct:
-          changePct != null && Number.isFinite(changePct)
-            ? changePct
-            : prev?.changePct ?? null,
-        history: wtiHistoryRef.current,
+      setQuotes((prev) => ({
+        ...prev,
+        wti: {
+          id: "wti",
+          value: price,
+          changePct:
+            changePct != null && Number.isFinite(changePct)
+              ? changePct
+              : prev.wti.changePct,
+        },
       }));
     };
 
@@ -216,19 +196,9 @@ export function useMacroDashboard(): MacroDashboardState {
   }, []);
 
   const ready = useMemo(
-    () =>
-      Boolean(
-        (dollar?.value ?? 0) > 0 ||
-          (wti?.value ?? 0) > 0 ||
-          (buffett?.value ?? 0) > 0
-      ),
-    [dollar, wti, buffett]
+    () => MACRO_SERIES.some((m) => (quotes[m.id]?.value ?? 0) > 0),
+    [quotes]
   );
 
-  return {
-    dollar: dollar ?? emptyQuote("dollar"),
-    wti: wti ?? emptyQuote("wti"),
-    buffett: buffett ?? emptyQuote("buffett"),
-    ready,
-  };
+  return { quotes, ready };
 }

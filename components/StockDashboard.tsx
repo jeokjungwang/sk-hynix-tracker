@@ -251,7 +251,7 @@ export default function StockDashboard() {
 
       <footer className="shrink-0 space-y-0.5 pb-8 pt-1 text-center text-[12px] font-medium text-[color:var(--muted)]">
         <p>
-          Bybit SAMSUNG·SKHYNIX·CLUSDT · 원달러 · 버핏(Wilshire/GDP) · 네이버 · 업비트 ·{" "}
+          Bybit SAMSUNG·SKHYNIX·CLUSDT · 원달러·WTI·US10Y·SOX·구리·VIX · 네이버 · 업비트 ·{" "}
           {headerLabel} · ₩{formatRate(usdKrwRate)}
         </p>
       </footer>
