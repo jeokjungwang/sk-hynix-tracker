@@ -15,6 +15,9 @@ import {
   type IndexedPoint,
 } from "@/lib/comparison";
 
+/** Match TickerChart — feed KST-shifted unix so axis labels read as Korea time */
+const KST_OFFSET_SEC = 9 * 60 * 60;
+
 type ComparisonChartProps = {
   data: IndexedPoint[];
 };
@@ -180,7 +183,7 @@ export default function ComparisonChart({ data }: ComparisonChartProps) {
         const value = point.values[meta.id];
         if (value == null || !Number.isFinite(value)) continue;
         byId[meta.id].push({
-          time: point.time as Time,
+          time: (point.time + KST_OFFSET_SEC) as Time,
           value,
         });
       }

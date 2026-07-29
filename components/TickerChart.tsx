@@ -30,8 +30,19 @@ function pad2(n: number): string {
   return String(n).padStart(2, "0");
 }
 
-/** Resolve chart time parts in Asia/Seoul (matches site clocks) */
-function kstParts(time: Time): {
+/** KST has no DST — shift unix seconds for chart display */
+const KST_OFFSET_SEC = 9 * 60 * 60;
+
+/**
+ * Chart library formats tick labels from UTC fields.
+ * Feed (unix + 9h) so those fields read as Korea time.
+ */
+function toChartTime(unixSec: number): Time {
+  return (unixSec + KST_OFFSET_SEC) as Time;
+}
+
+/** Parts from chart time (already KST-shifted) via UTC getters */
+function displayParts(time: Time): {
   y: number;
   m: number;
   d: number;
@@ -39,15 +50,8 @@ function kstParts(time: Time): {
   mm: number;
 } {
   if (typeof time === "object" && time !== null && "year" in time) {
-    return {
-      y: time.year,
-      m: time.month,
-      d: time.day,
-      hh: 0,
-      mm: 0,
-    };
+    return { y: time.year, m: time.month, d: time.day, hh: 0, mm: 0 };
   }
-
   if (typeof time === "string") {
     const [ys, ms, ds] = time.split("-");
     return {
@@ -59,44 +63,28 @@ function kstParts(time: Time): {
     };
   }
 
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Seoul",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).formatToParts(new Date(time * 1000));
-
-  const get = (type: Intl.DateTimeFormatPartTypes) =>
-    Number(parts.find((p) => p.type === type)?.value ?? 0);
-
-  let hh = get("hour");
-  // Some engines emit 24:00 for midnight
-  if (hh === 24) hh = 0;
-
+  const date = new Date(time * 1000);
   return {
-    y: get("year"),
-    m: get("month"),
-    d: get("day"),
-    hh,
-    mm: get("minute"),
+    y: date.getUTCFullYear(),
+    m: date.getUTCMonth() + 1,
+    d: date.getUTCDate(),
+    hh: date.getUTCHours(),
+    mm: date.getUTCMinutes(),
   };
 }
 
-/** Crosshair / selection label — KST date·time for 5m / D / M */
+/** Crosshair / selection label — Korea date·time for 5m / D / M */
 function formatCrosshairTime(time: Time, interval: ChartInterval): string {
-  const { y, m, d, hh, mm } = kstParts(time);
+  const { y, m, d, hh, mm } = displayParts(time);
 
   if (interval === "M") return `${y}-${pad2(m)}`;
   if (interval === "D") return `${y}-${pad2(m)}-${pad2(d)}`;
   return `${y}-${pad2(m)}-${pad2(d)} ${pad2(hh)}:${pad2(mm)} (KST)`;
 }
 
-/** Axis ticks — always KST so they match clocks & selection label */
+/** Axis ticks — short labels from KST-shifted chart times */
 function formatTickMark(time: Time, tickMarkType: TickMarkType): string {
-  const { y, m, d, hh, mm } = kstParts(time);
+  const { y, m, d, hh, mm } = displayParts(time);
 
   switch (tickMarkType) {
     case TickMarkType.Year:
@@ -111,11 +99,6 @@ function formatTickMark(time: Time, tickMarkType: TickMarkType): string {
     default:
       return `${m}/${d}`;
   }
-}
-
-function toChartTime(unixSec: number, _interval: ChartInterval): Time {
-  // Keep UTC timestamps; all labels format in KST so axis matches site clocks
-  return unixSec as Time;
 }
 
 function readChartTheme() {
@@ -372,7 +355,7 @@ export default function TickerChart({
     const candleData = Array.from(unique.values())
       .sort((a, b) => a.time - b.time)
       .map((c) => ({
-        time: toChartTime(c.time, intervalRef.current),
+        time: toChartTime(c.time),
         open: c.open,
         high: c.high,
         low: c.low,
