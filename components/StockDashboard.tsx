@@ -136,9 +136,9 @@ function StockCard({
       <div className="toss-panel shrink-0 px-3.5 py-3">
         <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
           <p className="toss-label">선물 환산가</p>
-          <p className="text-sm font-semibold tracking-tight">
+          <p className="text-sm font-medium tracking-tight">
             <span className="text-[color:var(--label)]">현물</span>{" "}
-            <span className="toss-accent text-base font-bold">
+            <span className="toss-accent text-base font-semibold">
               {hasSpot ? formatKrw(stock.spotPrice) : "-"}
             </span>
             <span className="mx-1.5 text-[color:var(--muted)]">/</span>
@@ -159,7 +159,7 @@ function StockCard({
         <p className="toss-price mt-2 text-[1.75rem] leading-none sm:text-[2rem]">
           {formatKrw(stock.futuresKrw)}
         </p>
-        <p className="mt-2 text-xs font-semibold text-[color:var(--label)]">
+        <p className="mt-2 text-xs font-medium text-[color:var(--label)]">
           <span className="toss-accent">
             {hasFutures ? formatUsdt(stock.lastPrice) : "-"}
           </span>
@@ -171,7 +171,7 @@ function StockCard({
 
       <div className="toss-panel flex h-[240px] w-full shrink-0 flex-col overflow-hidden">
         <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-[color:var(--border)] px-3 py-2.5">
-          <p className="text-[13px] font-bold tracking-tight text-[color:var(--foreground)]">
+          <p className="text-[13px] font-semibold tracking-tight text-[color:var(--foreground)]">
             선물 환산가 · {intervalLabel}
           </p>
           <IntervalTabs value={chartInterval} onChange={onIntervalChange} />
@@ -218,12 +218,10 @@ export default function StockDashboard() {
             <p className="toss-label">Bybit Futures · Naver Spot</p>
             <SourceBadge label={headerLabel} />
           </div>
-          <h1 className="text-[1.65rem] font-bold leading-tight tracking-[-0.04em] text-[color:var(--foreground)] sm:text-[2rem]">
-            삼성전자 SK하이닉스
-            <br className="sm:hidden" />{" "}
-            <span className="sm:inline">24시간 시장현황</span>
+          <h1 className="whitespace-nowrap text-[clamp(12px,3.5vw,2rem)] font-semibold leading-snug tracking-[-0.02em] text-[color:var(--foreground)]">
+            삼성전자 SK하이닉스 24시간 해외시장현황
           </h1>
-          <p className="text-[15px] font-semibold leading-snug text-[color:var(--accent)]">
+          <p className="text-[15px] font-medium leading-snug text-[color:var(--accent)]">
             해외 bybit선물 금액으로 공휴일에도 시세 확인
           </p>
         </div>

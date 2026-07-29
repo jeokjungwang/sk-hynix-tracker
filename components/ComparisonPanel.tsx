@@ -53,11 +53,11 @@ export default function ComparisonPanel() {
                     className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
                     style={{ backgroundColor: series.color }}
                   />
-                  <span className="truncate text-[13px] font-bold tracking-tight">
+                  <span className="truncate text-[13px] font-semibold tracking-tight">
                     {series.shortName}
                   </span>
                   <span
-                    className={`text-[11px] font-bold ${moveTone(move?.slope15m)}`}
+                    className={`text-[11px] font-semibold ${moveTone(move?.slope15m)}`}
                   >
                     {slopeLabel(move?.slope15m ?? null)}
                   </span>
@@ -73,7 +73,7 @@ export default function ComparisonPanel() {
                 <span className="font-medium text-[color:var(--label)]">
                   15분 기울기
                 </span>
-                <span className={`font-bold tabular-nums ${moveTone(move?.slope15m)}`}>
+                <span className={`font-semibold tabular-nums ${moveTone(move?.slope15m)}`}>
                   {formatPct(move?.slope15m)}
                 </span>
               </div>
@@ -81,7 +81,7 @@ export default function ComparisonPanel() {
                 <span className="font-medium text-[color:var(--label)]">
                   1시간 기울기
                 </span>
-                <span className={`font-bold tabular-nums ${moveTone(move?.slope1h)}`}>
+                <span className={`font-semibold tabular-nums ${moveTone(move?.slope1h)}`}>
                   {formatPct(move?.slope1h)}
                 </span>
               </div>
@@ -111,7 +111,7 @@ export default function ComparisonPanel() {
 
       <div className="toss-panel flex h-[240px] w-full shrink-0 flex-col overflow-hidden">
         <div className="shrink-0 border-b border-[color:var(--border)] px-3 py-2.5">
-          <p className="text-[13px] font-bold tracking-tight">
+          <p className="text-[13px] font-semibold tracking-tight">
             24시간 기울기 비교 · 출발 0%
           </p>
         </div>

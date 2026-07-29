@@ -49,7 +49,7 @@ function ClockRow({
     <div className="text-right">
       <div className="flex items-baseline justify-end gap-1.5">
         <span
-          className={`text-lg font-bold tracking-tight ${
+          className={`text-lg font-semibold tracking-tight ${
             emphasize ? "toss-accent" : "text-[color:var(--foreground)]"
           }`}
         >
