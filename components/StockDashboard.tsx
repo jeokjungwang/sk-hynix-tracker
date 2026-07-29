@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import ComparisonPanel from "@/components/ComparisonPanel";
+import CoupangBanner from "@/components/CoupangBanner";
 import MarketClocks from "@/components/MarketClocks";
 import TickerChart from "@/components/TickerChart";
 import {
@@ -242,6 +243,7 @@ export default function StockDashboard() {
             onIntervalChange={setChartInterval}
           />
         )}
+        <CoupangBanner />
         {hynix && (
           <StockCard
             stock={hynix}
