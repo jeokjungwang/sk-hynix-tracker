@@ -211,14 +211,14 @@ export default function StockDashboard() {
   const hynix = stocks.find((s) => s.id === "hynix");
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-4 overflow-y-auto overscroll-y-contain">
+    <div className="flex flex-col gap-4">
       <header className="flex shrink-0 flex-col gap-3 pb-0.5 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
         <div className="min-w-0 space-y-2 pr-12 lg:pr-0">
           <div className="flex flex-wrap items-center gap-2">
             <p className="toss-label">Bybit Futures · Naver Spot</p>
             <SourceBadge label={headerLabel} />
           </div>
-          <h1 className="whitespace-nowrap text-[clamp(12px,3.5vw,2rem)] font-semibold leading-snug tracking-[-0.02em] text-[color:var(--foreground)]">
+          <h1 className="text-[1.75rem] font-semibold leading-[1.25] tracking-[-0.03em] text-[color:var(--foreground)] sm:text-[2rem]">
             삼성전자 SK하이닉스 24시간 해외시장현황
           </h1>
           <p className="text-[15px] font-medium leading-snug text-[color:var(--accent)]">
@@ -228,7 +228,7 @@ export default function StockDashboard() {
         <MarketClocks />
       </header>
 
-      <section className="flex flex-col gap-3 pb-4 lg:grid lg:grid-cols-3 lg:items-start lg:gap-4">
+      <section className="flex flex-col gap-3 pb-2 lg:grid lg:grid-cols-3 lg:items-start lg:gap-4">
         {samsung && (
           <StockCard
             stock={samsung}
@@ -249,7 +249,7 @@ export default function StockDashboard() {
         <ComparisonPanel />
       </section>
 
-      <footer className="shrink-0 space-y-0.5 pb-3 text-center text-[12px] font-medium text-[color:var(--muted)]">
+      <footer className="shrink-0 space-y-0.5 pb-8 pt-1 text-center text-[12px] font-medium text-[color:var(--muted)]">
         <p>
           Bybit SAMSUNG·SKHYNIX·SKHY·MU · 네이버 KRX/NXT · 업비트 환율 ·{" "}
           {headerLabel} · ₩{formatRate(usdKrwRate)}

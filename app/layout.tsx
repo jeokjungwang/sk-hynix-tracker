@@ -78,7 +78,7 @@ export default function RootLayout({
         />
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
-      <body className="flex h-full flex-col overflow-hidden bg-background font-sans text-foreground">
+      <body className="min-h-full bg-background font-sans text-foreground">
         <GoogleAnalytics />
         {children}
       </body>

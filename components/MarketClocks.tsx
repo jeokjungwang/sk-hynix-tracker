@@ -47,24 +47,24 @@ function ClockRow({
 }) {
   return (
     <div className="text-right">
-      <div className="flex items-baseline justify-end gap-1.5">
+      <div className="flex items-baseline justify-end gap-1">
         <span
-          className={`text-lg font-semibold tracking-tight ${
+          className={`text-[13px] font-semibold tracking-tight ${
             emphasize ? "toss-accent" : "text-[color:var(--foreground)]"
           }`}
         >
           {label}
         </span>
-        <span className="toss-label text-[11px]">{zone}</span>
+        <span className="toss-label text-[10px]">{zone}</span>
       </div>
       <p
-        className={`toss-price mt-1.5 text-[1.75rem] leading-none ${
+        className={`toss-price mt-1 text-[1.25rem] leading-none sm:text-[1.35rem] ${
           emphasize ? "toss-accent" : ""
         }`}
       >
         {time}
       </p>
-      <p className="toss-label mt-1.5 text-[12px]">{day}</p>
+      <p className="toss-label mt-1 text-[11px]">{day}</p>
     </div>
   );
 }
@@ -82,13 +82,13 @@ export default function MarketClocks() {
 
   if (!mounted) {
     return (
-      <div className="toss-card h-[108px] w-[300px] max-w-full shrink-0" />
+      <div className="toss-card h-[88px] w-[280px] max-w-full shrink-0" />
     );
   }
 
   return (
-    <div className="toss-card shrink-0 px-4 py-3.5">
-      <div className="flex items-stretch gap-5">
+    <div className="toss-card shrink-0 px-3.5 py-2.5">
+      <div className="flex items-stretch gap-4">
         <ClockRow
           label="한국"
           zone="KST"
