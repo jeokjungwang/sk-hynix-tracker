@@ -1,8 +1,8 @@
 "use client";
 
 import type { ReactNode } from "react";
-import ComparisonPanel from "@/components/ComparisonPanel";
 import CoupangBanner from "@/components/CoupangBanner";
+import MacroPanel from "@/components/MacroPanel";
 import MarketClocks from "@/components/MarketClocks";
 import TickerChart from "@/components/TickerChart";
 import {
@@ -246,12 +246,12 @@ export default function StockDashboard() {
             onIntervalChange={setChartInterval}
           />
         )}
-        <ComparisonPanel />
+        <MacroPanel />
       </section>
 
       <footer className="shrink-0 space-y-0.5 pb-8 pt-1 text-center text-[12px] font-medium text-[color:var(--muted)]">
         <p>
-          Bybit SAMSUNG·SKHYNIX·SKHY·MU · 네이버 KRX/NXT · 업비트 환율 ·{" "}
+          Bybit SAMSUNG·SKHYNIX·CLUSDT · DXY · 버핏(Wilshire/GDP) · 네이버 · 업비트 ·{" "}
           {headerLabel} · ₩{formatRate(usdKrwRate)}
         </p>
       </footer>

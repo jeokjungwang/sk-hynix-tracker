@@ -9,18 +9,30 @@ import {
   type ISeriesApi,
   type Time,
 } from "lightweight-charts";
-import {
-  COMPARE_SERIES,
-  type CompareSeriesId,
-  type IndexedPoint,
-} from "@/lib/comparison";
+import type { CandlePoint } from "@/lib/candles";
+import { MACRO_SERIES, type MacroId } from "@/lib/macro";
 
 /** Match TickerChart — feed KST-shifted unix so axis labels read as Korea time */
 const KST_OFFSET_SEC = 9 * 60 * 60;
 
-type ComparisonChartProps = {
-  data: IndexedPoint[];
+type SeriesInput = {
+  id: MacroId;
+  history: CandlePoint[];
 };
+
+type MacroMiniChartProps = {
+  series: SeriesInput[];
+};
+
+function toIndexed(history: CandlePoint[]): { time: Time; value: number }[] {
+  const valid = history.filter((c) => c.close > 0);
+  if (valid.length === 0) return [];
+  const base = valid[0]!.close;
+  return valid.map((c) => ({
+    time: (c.time + KST_OFFSET_SEC) as Time,
+    value: (c.close / base - 1) * 100,
+  }));
+}
 
 function readChartTheme() {
   const styles = getComputedStyle(document.documentElement);
@@ -33,14 +45,10 @@ function readChartTheme() {
   };
 }
 
-export default function ComparisonChart({ data }: ComparisonChartProps) {
+export default function MacroMiniChart({ series }: MacroMiniChartProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<IChartApi | null>(null);
-  const seriesRefs = useRef<
-    Partial<Record<CompareSeriesId, ISeriesApi<"Line">>>
-  >({});
-  const followLiveRef = useRef(true);
-  const pointCountRef = useRef(0);
+  const seriesRefs = useRef<Partial<Record<MacroId, ISeriesApi<"Line">>>>({});
 
   useEffect(() => {
     const container = containerRef.current;
@@ -78,29 +86,27 @@ export default function ComparisonChart({ data }: ComparisonChartProps) {
         borderColor: theme.grid,
         timeVisible: true,
         secondsVisible: false,
-        rightOffset: 4,
-        barSpacing: 6,
+        rightOffset: 2,
+        barSpacing: 4,
       },
     });
 
-    const refs: Partial<Record<CompareSeriesId, ISeriesApi<"Line">>> = {};
-    for (const meta of COMPARE_SERIES) {
-      const series = chart.addSeries(LineSeries, {
+    const refs: Partial<Record<MacroId, ISeriesApi<"Line">>> = {};
+    for (const meta of MACRO_SERIES) {
+      refs[meta.id] = chart.addSeries(LineSeries, {
         color: meta.color,
-        lineWidth: meta.id === "hynix_adr" ? 4 : 2,
+        lineWidth: meta.id === "wti" ? 3 : 2,
         priceLineVisible: false,
         lastValueVisible: true,
-        crosshairMarkerVisible: true,
         priceFormat: {
           type: "custom",
           formatter: (price: number) =>
             `${price >= 0 ? "+" : ""}${price.toFixed(2)}%`,
         },
       });
-      refs[meta.id] = series;
     }
 
-    refs.hynix_kospi?.createPriceLine({
+    refs.dollar?.createPriceLine({
       price: 0,
       color: theme.zero,
       lineWidth: 1,
@@ -111,14 +117,6 @@ export default function ComparisonChart({ data }: ComparisonChartProps) {
 
     chartRef.current = chart;
     seriesRefs.current = refs;
-
-    const onRange = () => {
-      const range = chart.timeScale().getVisibleLogicalRange();
-      if (!range) return;
-      const last = pointCountRef.current - 1;
-      followLiveRef.current = range.to >= last - 3;
-    };
-    chart.timeScale().subscribeVisibleLogicalRangeChange(onRange);
 
     const resize = () => {
       const w = container.clientWidth;
@@ -137,21 +135,10 @@ export default function ComparisonChart({ data }: ComparisonChartProps) {
           vertLines: { color: next.grid },
           horzLines: { color: next.grid },
         },
-        crosshair: {
-          vertLine: {
-            color: next.cross,
-            labelBackgroundColor: next.label,
-          },
-          horzLine: {
-            color: next.cross,
-            labelBackgroundColor: next.label,
-          },
-        },
         rightPriceScale: { borderColor: next.grid },
         timeScale: { borderColor: next.grid },
       });
     };
-
     const mo = new MutationObserver(syncTheme);
     mo.observe(document.documentElement, {
       attributes: true,
@@ -161,7 +148,6 @@ export default function ComparisonChart({ data }: ComparisonChartProps) {
     return () => {
       mo.disconnect();
       ro.disconnect();
-      chart.timeScale().unsubscribeVisibleLogicalRangeChange(onRange);
       chart.remove();
       chartRef.current = null;
       seriesRefs.current = {};
@@ -172,34 +158,14 @@ export default function ComparisonChart({ data }: ComparisonChartProps) {
     const chart = chartRef.current;
     if (!chart) return;
 
-    const byId: Record<CompareSeriesId, { time: Time; value: number }[]> = {
-      hynix_kospi: [],
-      hynix_adr: [],
-      micron: [],
-    };
-
-    for (const point of data) {
-      for (const meta of COMPARE_SERIES) {
-        const value = point.values[meta.id];
-        if (value == null || !Number.isFinite(value)) continue;
-        byId[meta.id].push({
-          time: (point.time + KST_OFFSET_SEC) as Time,
-          value,
-        });
-      }
+    let any = false;
+    for (const item of series) {
+      const data = toIndexed(item.history);
+      seriesRefs.current[item.id]?.setData(data);
+      if (data.length > 0) any = true;
     }
-
-    for (const meta of COMPARE_SERIES) {
-      seriesRefs.current[meta.id]?.setData(byId[meta.id]);
-    }
-
-    const prevCount = pointCountRef.current;
-    pointCountRef.current = data.length;
-
-    if (prevCount === 0 || followLiveRef.current) {
-      chart.timeScale().scrollToRealTime();
-    }
-  }, [data]);
+    if (any) chart.timeScale().fitContent();
+  }, [series]);
 
   return <div ref={containerRef} className="h-full min-h-[200px] w-full" />;
 }
