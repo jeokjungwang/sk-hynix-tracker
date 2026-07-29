@@ -2,48 +2,68 @@
 
 :root,
 html.light {
-  --background: #f1f5f9;
-  --foreground: #0f172a;
-  --glow: #dbeafe;
-  --toggle-bg: rgb(255 255 255 / 0.95);
-  --toggle-border: rgb(203 213 225 / 0.95);
-  --toggle-fg: #0f172a;
-  --chart-text: #64748b;
-  --chart-grid: rgba(148, 163, 184, 0.35);
-  --chart-cross: rgba(100, 116, 139, 0.45);
-  --chart-label: #e2e8f0;
-  --chart-zero: rgba(100, 116, 139, 0.55);
+  --background: #f2f4f6;
+  --foreground: #191f28;
+  --card: #ffffff;
+  --card-muted: #f9fafb;
+  --border: #e5e8eb;
+  --label: #8b95a1;
+  --muted: #b0b8c1;
+  --accent: #3182f6;
+  --accent-soft: #e8f3ff;
+  --up: #f04452;
+  --down: #3182f6;
+  --ok: #03b26c;
+  --shadow: 0 2px 12px rgba(0, 29, 58, 0.06);
+  --toggle-bg: #ffffff;
+  --toggle-border: #e5e8eb;
+  --toggle-fg: #191f28;
+  --chart-text: #8b95a1;
+  --chart-grid: rgba(0, 29, 58, 0.06);
+  --chart-cross: rgba(49, 130, 246, 0.35);
+  --chart-label: #3182f6;
+  --chart-zero: rgba(139, 149, 161, 0.55);
   color-scheme: light;
 }
 
 html.dark {
-  --background: #0b0f14;
-  --foreground: #e8edf4;
-  --glow: #152033;
-  --toggle-bg: rgb(15 23 42 / 0.92);
-  --toggle-border: rgb(51 65 85 / 0.9);
-  --toggle-fg: #e2e8f0;
-  --chart-text: #94a3b8;
-  --chart-grid: rgba(30, 41, 59, 0.7);
-  --chart-cross: rgba(148, 163, 184, 0.4);
-  --chart-label: #1e293b;
-  --chart-zero: rgba(148, 163, 184, 0.55);
+  --background: #17171c;
+  --foreground: #e5e7ec;
+  --card: #212229;
+  --card-muted: #2a2b32;
+  --border: #2f3038;
+  --label: #8b95a1;
+  --muted: #6b7280;
+  --accent: #4593fc;
+  --accent-soft: rgba(69, 147, 252, 0.16);
+  --up: #f04452;
+  --down: #4593fc;
+  --ok: #03b26c;
+  --shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+  --toggle-bg: #212229;
+  --toggle-border: #2f3038;
+  --toggle-fg: #e5e7ec;
+  --chart-text: #8b95a1;
+  --chart-grid: rgba(255, 255, 255, 0.06);
+  --chart-cross: rgba(69, 147, 252, 0.4);
+  --chart-label: #2a2b32;
+  --chart-zero: rgba(139, 149, 161, 0.45);
   color-scheme: dark;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont,
+    system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 }
 
 body {
-  background:
-    radial-gradient(1200px 600px at 50% -10%, var(--glow) 0%, transparent 55%),
-    var(--background);
+  background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-family: var(--font-sans);
+  letter-spacing: -0.02em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -52,173 +72,145 @@ body {
   background: var(--toggle-bg);
   border-color: var(--toggle-border);
   color: var(--toggle-fg);
+  box-shadow: var(--shadow);
 }
 
-/* Light mode remaps for existing slate-based UI */
-html.light .bg-slate-900\/70 {
-  background-color: rgb(255 255 255 / 0.92) !important;
+/* Toss-like surfaces */
+.toss-card {
+  border-radius: 1.25rem;
+  background: var(--card);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
 }
 
-html.light .bg-slate-950\/40,
-html.light .bg-slate-950\/50,
-html.light .bg-slate-950\/70 {
-  background-color: rgb(248 250 252 / 0.95) !important;
+.toss-panel {
+  border-radius: 1rem;
+  background: var(--card-muted);
+  border: 1px solid transparent;
 }
 
-html.light .bg-slate-800 {
-  background-color: #cbd5e1 !important;
+.toss-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--label);
+  letter-spacing: -0.01em;
 }
 
-html.light .border-slate-800,
-html.light .border-slate-800\/80 {
-  border-color: #e2e8f0 !important;
+.toss-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--foreground);
+  line-height: 1.25;
 }
 
-html.light .text-white,
-html.light .text-slate-50,
-html.light .text-slate-100 {
-  color: #0f172a !important;
+.toss-price {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  color: var(--foreground);
 }
 
-html.light .text-slate-200,
-html.light .text-slate-300 {
-  color: #334155 !important;
+.toss-accent {
+  color: var(--accent);
 }
 
-html.light .text-slate-400 {
-  color: #475569 !important;
+.toss-up {
+  color: var(--up);
 }
 
-html.light .text-slate-500 {
-  color: #64748b !important;
+.toss-down {
+  color: var(--down);
 }
 
-html.light .text-slate-600 {
-  color: #94a3b8 !important;
+.toss-ok {
+  color: var(--ok);
 }
 
-html.light .text-sky-300,
-html.light .text-sky-400 {
-  color: #0284c7 !important;
-}
-
-html.light .text-yellow-400\/80 {
-  color: rgb(202 138 4 / 0.95) !important;
-}
-
-html.light .text-emerald-300 {
-  color: #059669 !important;
-}
-
-html.light .text-red-300,
-html.light .text-red-400 {
-  color: #dc2626 !important;
-}
-
-html.light .text-blue-300,
-html.light .text-blue-400 {
-  color: #2563eb !important;
-}
-
-html.light .border-emerald-400\/30 {
-  border-color: rgb(52 211 153 / 0.45) !important;
-}
-
-html.light .bg-emerald-500\/10 {
-  background-color: rgb(16 185 129 / 0.12) !important;
-}
-
-html.light .text-emerald-300 {
-  color: #047857 !important;
-}
-
-html.light .border-violet-400\/40 {
-  border-color: rgb(167 139 250 / 0.5) !important;
-}
-
-html.light .bg-violet-500\/15 {
-  background-color: rgb(139 92 246 / 0.12) !important;
-}
-
-html.light .text-violet-300 {
-  color: #6d28d9 !important;
-}
-
-html.light .border-fuchsia-400\/50 {
-  border-color: rgb(232 121 249 / 0.5) !important;
-}
-
-html.light .bg-fuchsia-500\/20 {
-  background-color: rgb(217 70 239 / 0.12) !important;
-}
-
-html.light .text-fuchsia-200 {
-  color: #a21caf !important;
-}
-
-/* Interval tabs — theme-aware, no remapped slate utilities */
-.interval-tabs {
+.toss-badge {
   display: inline-flex;
-  border-radius: 0.5rem;
-  border: 1px solid rgb(71 85 105);
-  background: rgb(30 41 59 / 0.9);
-  padding: 0.125rem;
-  gap: 0.125rem;
-}
-
-.interval-tabs button {
-  border-radius: 0.375rem;
+  align-items: center;
+  border-radius: 9999px;
   padding: 0.25rem 0.625rem;
   font-size: 11px;
   font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.toss-badge-krx {
+  background: #e8f8ef;
+  color: #028a4c;
+}
+
+html.dark .toss-badge-krx {
+  background: rgba(3, 178, 108, 0.16);
+  color: #3dd68c;
+}
+
+.toss-badge-nxt {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.toss-badge-warn {
+  background: #fff1f1;
+  color: #d93025;
+}
+
+html.dark .toss-badge-warn {
+  background: rgba(240, 68, 82, 0.16);
+  color: #ff7b84;
+}
+
+/* Segmented control — Toss style */
+.interval-tabs {
+  display: inline-flex;
+  border-radius: 9999px;
+  background: var(--card-muted);
+  padding: 0.2rem;
+  gap: 0.15rem;
+  border: none;
+}
+
+.interval-tabs button {
+  border-radius: 9999px;
+  padding: 0.35rem 0.75rem;
+  font-size: 12px;
+  font-weight: 700;
   line-height: 1.25;
-  color: #f8fafc;
+  letter-spacing: -0.02em;
+  color: var(--label);
   background: transparent;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .interval-tabs button:hover {
-  background: rgb(51 65 85 / 0.9);
-  color: #ffffff;
+  color: var(--foreground);
 }
 
 .interval-tabs button[data-active="true"] {
-  background: #0ea5e9;
-  color: #ffffff;
+  background: var(--card);
+  color: var(--accent);
+  box-shadow: 0 1px 4px rgba(0, 29, 58, 0.08);
 }
 
-html.light .interval-tabs {
-  border-color: #64748b;
-  background: #e2e8f0;
+html.dark .interval-tabs button[data-active="true"] {
+  background: var(--card-muted);
+  box-shadow: none;
+  border: 1px solid var(--border);
 }
 
-html.light .interval-tabs button {
-  color: #0f172a !important;
-}
-
-html.light .interval-tabs button:hover {
-  background: #cbd5e1 !important;
-  color: #020617 !important;
-}
-
-html.light .interval-tabs button[data-active="true"] {
-  background: #0369a1 !important;
-  color: #ffffff !important;
-}
-
-/* Chart corner hint */
 .chart-hint {
-  border-radius: 0.25rem;
-  background: rgb(2 6 23 / 0.75);
+  border-radius: 0.5rem;
+  background: rgb(255 255 255 / 0.92);
+  border: 1px solid var(--border);
   padding: 0.25rem 0.5rem;
   font-size: 10px;
   font-weight: 600;
-  letter-spacing: 0.02em;
-  color: #e2e8f0;
+  letter-spacing: -0.01em;
+  color: var(--label);
 }
 
-html.light .chart-hint {
-  background: rgb(255 255 255 / 0.92) !important;
-  border: 1px solid #94a3b8;
-  color: #0f172a !important;
+html.dark .chart-hint {
+  background: rgb(33 34 41 / 0.92);
 }

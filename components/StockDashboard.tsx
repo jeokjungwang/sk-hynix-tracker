@@ -47,22 +47,21 @@ function formatBasis(value: number, ready: boolean): string {
 }
 
 function Hint({ children }: { children: ReactNode }) {
-  return <p className="text-[11px] leading-relaxed text-slate-500">{children}</p>;
+  return <p className="toss-label mt-1">{children}</p>;
 }
 
 function SourceBadge({ label }: { label: SpotLabel }) {
   const isUnavailable = label === "NXT(데이터없음)";
   const isNxt = label === "NXT" || isUnavailable;
+  const cls = isUnavailable
+    ? "toss-badge-warn"
+    : isNxt
+      ? "toss-badge-nxt"
+      : "toss-badge-krx";
 
   return (
     <span
-      className={`inline-flex max-w-full items-center rounded-full border px-2 py-0.5 text-[10px] font-bold tracking-wide ${
-        isUnavailable
-          ? "border-fuchsia-400/50 bg-fuchsia-500/20 text-fuchsia-200"
-          : isNxt
-            ? "border-violet-400/40 bg-violet-500/15 text-violet-300"
-            : "border-emerald-400/30 bg-emerald-500/10 text-emerald-300"
-      }`}
+      className={`toss-badge ${cls}`}
       title={
         isUnavailable
           ? "NXT 시세 없음 · 마지막 KRX 종가 표시"
@@ -121,65 +120,63 @@ function StockCard({
     CHART_INTERVALS.find((i) => i.id === chartInterval)?.label ?? "5분봉";
 
   return (
-    <article className="flex min-w-0 flex-col gap-2 rounded-2xl border border-slate-800 bg-slate-900/70 p-3 backdrop-blur">
+    <article className="toss-card flex min-w-0 flex-col gap-3 p-4">
       <header className="flex shrink-0 items-start justify-between gap-2">
-        <div className="min-w-0 space-y-0.5">
-          <p className="truncate text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+        <div className="min-w-0 space-y-1">
+          <p className="toss-label truncate">
             {stock.bybitTicker} · {stock.naverCode}
           </p>
-          <h2 className="truncate text-lg font-bold tracking-tight text-slate-50 sm:text-xl">
+          <h2 className="toss-title truncate text-[1.35rem] sm:text-[1.5rem]">
             {stock.name}
           </h2>
         </div>
         <SourceBadge label={stock.spotLabel} />
       </header>
 
-      <div className="shrink-0 rounded-xl border border-slate-800/80 bg-slate-950/40 px-3 py-2.5">
+      <div className="toss-panel shrink-0 px-3.5 py-3">
         <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
-            선물 환산가 (KRW)
-          </p>
-          <p className="font-mono text-sm font-semibold tracking-tight">
-            <span className="text-slate-400">현물:</span>{" "}
-            <span className="text-base font-bold text-yellow-400">
+          <p className="toss-label">선물 환산가</p>
+          <p className="text-sm font-semibold tracking-tight">
+            <span className="text-[color:var(--label)]">현물</span>{" "}
+            <span className="toss-accent text-base font-bold">
               {hasSpot ? formatKrw(stock.spotPrice) : "-"}
             </span>
-            <span className="mx-1.5 text-slate-600">/</span>
-            <span className="text-slate-400">괴리율:</span>{" "}
+            <span className="mx-1.5 text-[color:var(--muted)]">/</span>
+            <span className="text-[color:var(--label)]">괴리율</span>{" "}
             <span
               className={
                 !hasBasis
-                  ? "text-slate-500"
+                  ? "text-[color:var(--label)]"
                   : stock.basis >= 0
-                    ? "text-red-400"
-                    : "text-blue-400"
+                    ? "toss-up"
+                    : "toss-down"
               }
             >
               {formatBasis(stock.basis, hasBasis)}
             </span>
           </p>
         </div>
-        <p className="mt-1 font-mono text-2xl font-bold leading-none tracking-tight text-white">
+        <p className="toss-price mt-2 text-[1.75rem] leading-none sm:text-[2rem]">
           {formatKrw(stock.futuresKrw)}
         </p>
-        <p className="mt-1 font-mono text-xs font-medium text-slate-400">
-          <span className="text-yellow-400/80">
+        <p className="mt-2 text-xs font-semibold text-[color:var(--label)]">
+          <span className="toss-accent">
             {hasFutures ? formatUsdt(stock.lastPrice) : "-"}
           </span>
-          <span className="mx-1.5 text-slate-600">·</span>
-          <span className="text-sky-300">₩{formatRate(usdKrwRate)}</span>
+          <span className="mx-1.5 text-[color:var(--muted)]">·</span>
+          <span>₩{formatRate(usdKrwRate)}</span>
         </p>
         {!hasFutures && <Hint>가격 불러오는 중...</Hint>}
       </div>
 
-      <div className="flex h-[240px] w-full shrink-0 flex-col overflow-hidden rounded-xl border border-slate-800/80 bg-slate-950/40">
-        <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-slate-800 px-3 py-2">
-          <p className="text-[11px] font-semibold text-slate-300">
-            선물 환산가 차트 · {intervalLabel}
+      <div className="toss-panel flex h-[240px] w-full shrink-0 flex-col overflow-hidden">
+        <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-[color:var(--border)] px-3 py-2.5">
+          <p className="text-[13px] font-bold tracking-tight text-[color:var(--foreground)]">
+            선물 환산가 · {intervalLabel}
           </p>
           <IntervalTabs value={chartInterval} onChange={onIntervalChange} />
         </div>
-        <div className="h-[calc(240px-2.25rem)] w-full p-1.5">
+        <div className="h-[calc(240px-2.75rem)] w-full p-2">
           {hasChartData ? (
             <TickerChart
               data={stock.priceHistory}
@@ -190,7 +187,7 @@ function StockCard({
             />
           ) : (
             <div className="flex h-full items-center justify-center">
-              <p className="text-xs text-slate-500">데이터 불러오는 중...</p>
+              <p className="toss-label">데이터 불러오는 중...</p>
             </div>
           )}
         </div>
@@ -214,27 +211,26 @@ export default function StockDashboard() {
   const hynix = stocks.find((s) => s.id === "hynix");
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-3 overflow-y-auto overscroll-y-contain">
+    <div className="flex h-full min-h-0 flex-col gap-4 overflow-y-auto overscroll-y-contain">
       <header className="flex shrink-0 flex-col gap-3 pb-0.5 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-        <div className="min-w-0 space-y-1.5 pr-12 lg:pr-0">
+        <div className="min-w-0 space-y-2 pr-12 lg:pr-0">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-              Multi-Stock · Bybit Futures · Naver Spot
-            </p>
+            <p className="toss-label">Bybit Futures · Naver Spot</p>
             <SourceBadge label={headerLabel} />
           </div>
-          <h1 className="text-xl font-bold tracking-tight text-slate-50 sm:text-2xl">
-            삼성전자 SK하이닉스 24시간 시장현황
+          <h1 className="text-[1.65rem] font-bold leading-tight tracking-[-0.04em] text-[color:var(--foreground)] sm:text-[2rem]">
+            삼성전자 SK하이닉스
+            <br className="sm:hidden" />{" "}
+            <span className="sm:inline">24시간 시장현황</span>
           </h1>
-          <p className="text-sm font-medium text-sky-400">
-            해외 bybit선물 금액을 통해 공휴일에도 시세확인 가능!
+          <p className="text-[15px] font-semibold leading-snug text-[color:var(--accent)]">
+            해외 bybit선물 금액으로 공휴일에도 시세 확인
           </p>
         </div>
         <MarketClocks />
       </header>
 
-      {/* 세로/모바일: 스크롤 · PC 와이드: 3열. 차트는 항상 고정 높이로 표시 */}
-      <section className="flex flex-col gap-3 pb-4 lg:grid lg:grid-cols-3 lg:items-start">
+      <section className="flex flex-col gap-3 pb-4 lg:grid lg:grid-cols-3 lg:items-start lg:gap-4">
         {samsung && (
           <StockCard
             stock={samsung}
@@ -255,7 +251,7 @@ export default function StockDashboard() {
         <ComparisonPanel />
       </section>
 
-      <footer className="shrink-0 space-y-0.5 pb-2 text-center text-[11px] text-slate-600">
+      <footer className="shrink-0 space-y-0.5 pb-3 text-center text-[12px] font-medium text-[color:var(--muted)]">
         <p>
           Bybit SAMSUNG·SKHYNIX·SKHY·MU · 네이버 KRX/NXT · 업비트 환율 ·{" "}
           {headerLabel} · ₩{formatRate(usdKrwRate)}

@@ -47,7 +47,7 @@ export default function ThemeToggle() {
       disabled={!ready}
       aria-label={theme === "dark" ? "화이트 모드로 전환" : "다크 모드로 전환"}
       title={theme === "dark" ? "화이트 모드" : "다크 모드"}
-      className="theme-toggle fixed top-3 right-3 z-50 flex h-10 w-10 items-center justify-center rounded-full border shadow-lg backdrop-blur transition hover:scale-105 disabled:opacity-60"
+      className="theme-toggle fixed top-3 right-3 z-50 flex h-11 w-11 items-center justify-center rounded-full border transition hover:scale-[1.03] active:scale-95 disabled:opacity-60"
     >
       {theme === "dark" ? <SunIcon /> : <MoonIcon />}
     </button>

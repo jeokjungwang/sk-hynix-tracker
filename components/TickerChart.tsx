@@ -139,7 +139,8 @@ export default function TickerChart({
       layout: {
         background: { type: ColorType.Solid, color: "transparent" },
         textColor: theme.text,
-        fontFamily: "var(--font-geist-mono), ui-monospace, monospace",
+        fontFamily:
+          '"Pretendard Variable", Pretendard, var(--font-geist-mono), ui-monospace, monospace',
         fontSize: 11,
         attributionLogo: false,
       },
@@ -206,12 +207,12 @@ export default function TickerChart({
     });
 
     const series = chart.addSeries(CandlestickSeries, {
-      upColor: "#f87171",
-      downColor: "#60a5fa",
-      borderUpColor: "#f87171",
-      borderDownColor: "#60a5fa",
-      wickUpColor: "#f87171",
-      wickDownColor: "#60a5fa",
+      upColor: "#f04452",
+      downColor: "#3182f6",
+      borderUpColor: "#f04452",
+      borderDownColor: "#3182f6",
+      wickUpColor: "#f04452",
+      wickDownColor: "#3182f6",
       borderVisible: true,
       wickVisible: true,
       priceFormat: {

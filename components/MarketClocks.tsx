@@ -47,24 +47,24 @@ function ClockRow({
 }) {
   return (
     <div className="text-right">
-      <div className="flex items-baseline justify-end gap-2">
+      <div className="flex items-baseline justify-end gap-1.5">
         <span
-          className={`text-[2rem] font-bold leading-none tracking-tight ${
-            emphasize ? "text-sky-300" : "text-slate-300"
+          className={`text-lg font-bold tracking-tight ${
+            emphasize ? "toss-accent" : "text-[color:var(--foreground)]"
           }`}
         >
           {label}
         </span>
-        <span className="text-sm font-semibold text-slate-500">{zone}</span>
+        <span className="toss-label text-[11px]">{zone}</span>
       </div>
       <p
-        className={`mt-1.5 font-mono text-[2rem] font-bold leading-none tracking-tight tabular-nums ${
-          emphasize ? "text-white" : "text-slate-100"
+        className={`toss-price mt-1.5 text-[1.75rem] leading-none ${
+          emphasize ? "toss-accent" : ""
         }`}
       >
         {time}
       </p>
-      <p className="mt-1.5 text-sm text-slate-500">{day}</p>
+      <p className="toss-label mt-1.5 text-[12px]">{day}</p>
     </div>
   );
 }
@@ -82,12 +82,12 @@ export default function MarketClocks() {
 
   if (!mounted) {
     return (
-      <div className="h-[108px] w-[320px] shrink-0 rounded-xl border border-slate-800/80 bg-slate-950/50" />
+      <div className="toss-card h-[108px] w-[300px] max-w-full shrink-0" />
     );
   }
 
   return (
-    <div className="shrink-0 rounded-xl border border-slate-800/80 bg-slate-950/50 px-4 py-3">
+    <div className="toss-card shrink-0 px-4 py-3.5">
       <div className="flex items-stretch gap-5">
         <ClockRow
           label="한국"
@@ -96,7 +96,7 @@ export default function MarketClocks() {
           day={korea.day}
           emphasize
         />
-        <div className="w-px self-stretch bg-slate-800" />
+        <div className="w-px self-stretch bg-[color:var(--border)]" />
         <ClockRow
           label="미국 동부"
           zone="ET"

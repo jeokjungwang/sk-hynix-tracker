@@ -14,75 +14,74 @@ function formatPct(value: number | null | undefined): string {
 }
 
 function moveTone(value: number | null | undefined): string {
-  if (value == null) return "text-slate-500";
-  if (Math.abs(value) < 0.15) return "text-slate-300";
-  return value > 0 ? "text-red-400" : "text-blue-400";
+  if (value == null) return "text-[color:var(--label)]";
+  if (Math.abs(value) < 0.15) return "text-[color:var(--muted)]";
+  return value > 0 ? "toss-up" : "toss-down";
 }
 
 function gapTone(value: number | null): string {
-  if (value == null) return "text-slate-500";
+  if (value == null) return "text-[color:var(--label)]";
   const abs = Math.abs(value);
-  if (abs < 0.3) return "text-emerald-300";
-  if (value > 0) return "text-red-300";
-  return "text-blue-300";
+  if (abs < 0.3) return "toss-ok";
+  if (value > 0) return "toss-up";
+  return "toss-down";
 }
 
 export default function ComparisonPanel() {
   const { indexedPoints, moves, spreads, ready } = useComparisonDashboard();
 
   return (
-    <article className="flex min-w-0 flex-col gap-2 rounded-2xl border border-slate-800 bg-slate-900/70 p-3 backdrop-blur">
-      <header className="shrink-0 space-y-0.5">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
-          Slope · Relative Move
-        </p>
-        <h2 className="text-lg font-bold tracking-tight text-slate-50 sm:text-xl">
+    <article className="toss-card flex min-w-0 flex-col gap-3 p-4">
+      <header className="shrink-0 space-y-1">
+        <p className="toss-label">Slope · Relative Move</p>
+        <h2 className="toss-title text-[1.35rem] sm:text-[1.5rem]">
           본주 · ADR · MU
         </h2>
-        <p className="text-[11px] leading-snug text-slate-400">
+        <p className="text-[13px] font-medium leading-snug text-[color:var(--label)]">
           절대가 무시 · 같은 출발선(0%)에서 상승·하락 기울기 비교
         </p>
       </header>
 
-      <div className="shrink-0 space-y-1.5">
+      <div className="shrink-0 space-y-2">
         {COMPARE_SERIES.map((series) => {
           const move = moves[series.id];
           return (
-            <div
-              key={series.id}
-              className="rounded-lg border border-slate-800/80 bg-slate-950/40 px-2.5 py-2"
-            >
+            <div key={series.id} className="toss-panel px-3 py-2.5">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex min-w-0 items-center gap-1.5">
                   <span
                     className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
                     style={{ backgroundColor: series.color }}
                   />
-                  <span className="truncate text-xs font-semibold text-slate-200">
+                  <span className="truncate text-[13px] font-bold tracking-tight">
                     {series.shortName}
                   </span>
                   <span
-                    className={`text-[10px] font-bold ${moveTone(move?.slope15m)}`}
+                    className={`text-[11px] font-bold ${moveTone(move?.slope15m)}`}
                   >
                     {slopeLabel(move?.slope15m ?? null)}
                   </span>
                 </div>
                 <span
-                  className="shrink-0 font-mono text-sm font-bold"
+                  className="toss-price shrink-0 text-base"
                   style={{ color: series.color }}
                 >
                   {formatPct(move?.fromBase)}
                 </span>
               </div>
-              <div className="mt-1 flex items-center justify-between gap-2 text-[11px]">
-                <span className="text-slate-500">15분 기울기</span>
-                <span className={`font-mono font-bold ${moveTone(move?.slope15m)}`}>
+              <div className="mt-1.5 flex items-center justify-between gap-2 text-[12px]">
+                <span className="font-medium text-[color:var(--label)]">
+                  15분 기울기
+                </span>
+                <span className={`font-bold tabular-nums ${moveTone(move?.slope15m)}`}>
                   {formatPct(move?.slope15m)}
                 </span>
               </div>
-              <div className="flex items-center justify-between gap-2 text-[11px]">
-                <span className="text-slate-500">1시간 기울기</span>
-                <span className={`font-mono font-bold ${moveTone(move?.slope1h)}`}>
+              <div className="flex items-center justify-between gap-2 text-[12px]">
+                <span className="font-medium text-[color:var(--label)]">
+                  1시간 기울기
+                </span>
+                <span className={`font-bold tabular-nums ${moveTone(move?.slope1h)}`}>
                   {formatPct(move?.slope1h)}
                 </span>
               </div>
@@ -91,51 +90,37 @@ export default function ComparisonPanel() {
         })}
       </div>
 
-      <div className="grid shrink-0 grid-cols-3 gap-1.5">
-        <div className="rounded-lg border border-slate-800/80 bg-slate-950/40 px-2 py-2 text-center">
-          <p className="text-[9px] font-semibold uppercase tracking-wide text-slate-500">
-            본주↔ADR
-          </p>
-          <p
-            className={`mt-0.5 font-mono text-base font-bold ${gapTone(spreads.kospiVsAdr)}`}
-          >
-            {formatPct(spreads.kospiVsAdr)}
-          </p>
-        </div>
-        <div className="rounded-lg border border-slate-800/80 bg-slate-950/40 px-2 py-2 text-center">
-          <p className="text-[9px] font-semibold uppercase tracking-wide text-slate-500">
-            본주↔MU
-          </p>
-          <p
-            className={`mt-0.5 font-mono text-base font-bold ${gapTone(spreads.kospiVsMu)}`}
-          >
-            {formatPct(spreads.kospiVsMu)}
-          </p>
-        </div>
-        <div className="rounded-lg border border-slate-800/80 bg-slate-950/40 px-2 py-2 text-center">
-          <p className="text-[9px] font-semibold uppercase tracking-wide text-slate-500">
-            ADR↔MU
-          </p>
-          <p
-            className={`mt-0.5 font-mono text-base font-bold ${gapTone(spreads.adrVsMu)}`}
-          >
-            {formatPct(spreads.adrVsMu)}
-          </p>
-        </div>
+      <div className="grid shrink-0 grid-cols-3 gap-2">
+        {(
+          [
+            ["본주↔ADR", spreads.kospiVsAdr],
+            ["본주↔MU", spreads.kospiVsMu],
+            ["ADR↔MU", spreads.adrVsMu],
+          ] as const
+        ).map(([label, value]) => (
+          <div key={label} className="toss-panel px-2 py-2.5 text-center">
+            <p className="toss-label text-[11px]">{label}</p>
+            <p
+              className={`toss-price mt-1 text-base ${gapTone(value)}`}
+            >
+              {formatPct(value)}
+            </p>
+          </div>
+        ))}
       </div>
 
-      <div className="flex h-[240px] w-full shrink-0 flex-col overflow-hidden rounded-xl border border-slate-800/80 bg-slate-950/40">
-        <div className="shrink-0 border-b border-slate-800 px-3 py-2">
-          <p className="text-[11px] font-semibold text-slate-300">
+      <div className="toss-panel flex h-[240px] w-full shrink-0 flex-col overflow-hidden">
+        <div className="shrink-0 border-b border-[color:var(--border)] px-3 py-2.5">
+          <p className="text-[13px] font-bold tracking-tight">
             24시간 기울기 비교 · 출발 0%
           </p>
         </div>
-        <div className="h-[calc(240px-2.25rem)] w-full p-1.5">
+        <div className="h-[calc(240px-2.75rem)] w-full p-2">
           {ready ? (
             <ComparisonChart data={indexedPoints} />
           ) : (
             <div className="flex h-full items-center justify-center">
-              <p className="text-xs text-slate-500">기울기 데이터 불러오는 중...</p>
+              <p className="toss-label">기울기 데이터 불러오는 중...</p>
             </div>
           )}
         </div>
