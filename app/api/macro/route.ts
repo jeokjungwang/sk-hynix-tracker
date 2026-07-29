@@ -14,13 +14,13 @@ type BybitTickerResponse = {
 };
 
 /**
- * Macro panel: DXY (Yahoo), WTI (Bybit CLUSDT), Buffett (Wilshire/GDP).
+ * Macro panel: USD/KRW (Yahoo), WTI (Bybit CLUSDT), Buffett (Wilshire/GDP).
  */
 export async function GET() {
   try {
-    const [dxy, wtiYahoo, wilshire, gdpBillions, wtiBybit] =
+    const [usdKrw, wtiYahoo, wilshire, gdpBillions, wtiBybit] =
       await Promise.all([
-        fetchYahooChart("DX-Y.NYB", "5m", "5d"),
+        fetchYahooChart("USDKRW=X", "5m", "5d"),
         fetchYahooChart("CL=F", "5m", "5d").catch(() => null),
         fetchYahooChart("^W5000", "1d", "3mo"),
         fetchUsGdpBillions(),
@@ -54,9 +54,9 @@ export async function GET() {
           ? ((wtiPrice - wtiPrev) / wtiPrev) * 100
           : null;
 
-    const dxyChangePct =
-      dxy.previousClose > 0
-        ? ((dxy.price - dxy.previousClose) / dxy.previousClose) * 100
+    const usdKrwChangePct =
+      usdKrw.previousClose > 0
+        ? ((usdKrw.price - usdKrw.previousClose) / usdKrw.previousClose) * 100
         : null;
 
     const buffett =
@@ -83,9 +83,9 @@ export async function GET() {
     return NextResponse.json({
       dollar: {
         id: "dollar",
-        value: dxy.price,
-        changePct: dxyChangePct,
-        history: dxy.bars,
+        value: usdKrw.price,
+        changePct: usdKrwChangePct,
+        history: usdKrw.bars,
       },
       wti: {
         id: "wti",

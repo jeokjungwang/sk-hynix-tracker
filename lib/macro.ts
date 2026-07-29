@@ -14,11 +14,11 @@ export type MacroMeta = {
 export const MACRO_SERIES: readonly MacroMeta[] = [
   {
     id: "dollar",
-    name: "달러지수",
-    shortName: "DXY",
-    unit: "pt",
+    name: "원달러",
+    shortName: "USD/KRW",
+    unit: "KRW",
     color: "#22d3ee",
-    source: "Yahoo DX-Y.NYB",
+    source: "Yahoo USDKRW=X",
   },
   {
     id: "wti",

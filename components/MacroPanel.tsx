@@ -13,6 +13,12 @@ function formatValue(id: string, value: number): string {
       maximumFractionDigits: 2,
     })}`;
   }
+  if (id === "dollar") {
+    return `₩${value.toLocaleString("ko-KR", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+  }
   return value.toLocaleString("en-US", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
@@ -52,10 +58,10 @@ export default function MacroPanel() {
       <header className="shrink-0 space-y-1">
         <p className="toss-label">Macro · Dollar · Oil · Valuation</p>
         <h2 className="toss-title text-[1.35rem] sm:text-[1.5rem]">
-          달러 · WTI · 버핏지수
+          원달러 · WTI · 버핏지수
         </h2>
         <p className="text-[13px] font-medium leading-snug text-[color:var(--label)]">
-          DXY · 원유 · 시총/GDP 밸류에이션
+          원달러 · 원유 · 시총/GDP 밸류에이션
         </p>
       </header>
 
