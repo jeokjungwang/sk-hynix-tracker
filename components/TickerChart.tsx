@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   CandlestickSeries,
   ColorType,
+  CrosshairMode,
   createChart,
   TickMarkType,
   type IChartApi,
@@ -24,6 +25,48 @@ type TickerChartProps = {
   fitAll?: boolean;
   onNeedBars?: () => void | Promise<void>;
 };
+
+function pad2(n: number): string {
+  return String(n).padStart(2, "0");
+}
+
+/** Crosshair / selection label — readable date·time for 5m / D / M */
+function formatCrosshairTime(time: Time, interval: ChartInterval): string {
+  if (typeof time === "object" && time !== null && "year" in time) {
+    if (interval === "M") {
+      return `${time.year}-${pad2(time.month)}`;
+    }
+    return `${time.year}-${pad2(time.month)}-${pad2(time.day)}`;
+  }
+
+  if (typeof time === "string") {
+    return interval === "M" ? time.slice(0, 7) : time;
+  }
+
+  const date = new Date(time * 1000);
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(date);
+
+  const get = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((p) => p.type === type)?.value ?? "";
+
+  const y = get("year");
+  const m = get("month");
+  const d = get("day");
+  const h = get("hour");
+  const min = get("minute");
+
+  if (interval === "M") return `${y}-${m}`;
+  if (interval === "D") return `${y}-${m}-${d}`;
+  return `${y}-${m}-${d} ${h}:${min}`;
+}
 
 /** Keep ≤8 chars so lightweight-charts tick labels don't overlap */
 function formatTickMark(time: Time, tickMarkType: TickMarkType): string {
@@ -60,7 +103,7 @@ function formatTickMark(time: Time, tickMarkType: TickMarkType): string {
       return `${m}/${d}`;
     case TickMarkType.Time:
     case TickMarkType.TimeWithSeconds:
-      return `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
+      return `${pad2(hh)}:${pad2(mm)}`;
     default:
       return `${m}/${d}`;
   }
@@ -82,7 +125,7 @@ function readChartTheme() {
     text: styles.getPropertyValue("--chart-text").trim() || "#94a3b8",
     grid: styles.getPropertyValue("--chart-grid").trim() || "rgba(30, 41, 59, 0.7)",
     cross: styles.getPropertyValue("--chart-cross").trim() || "rgba(148, 163, 184, 0.4)",
-    label: styles.getPropertyValue("--chart-label").trim() || "#1e293b",
+    label: styles.getPropertyValue("--accent").trim() || "#3182f6",
   };
 }
 
@@ -103,6 +146,7 @@ export default function TickerChart({
   const loadBackDataRef = useRef(loadBackData);
   const fitAllRef = useRef(fitAll);
   const intervalRef = useRef(interval);
+  const [selectedTime, setSelectedTime] = useState<string | null>(null);
 
   useEffect(() => {
     onNeedBarsRef.current = onNeedBars;
@@ -118,12 +162,17 @@ export default function TickerChart({
 
   useEffect(() => {
     intervalRef.current = interval;
+    setSelectedTime(null);
     const chart = chartRef.current;
     if (!chart) return;
     chart.applyOptions({
       timeScale: {
         timeVisible: interval === "5",
         secondsVisible: false,
+      },
+      localization: {
+        timeFormatter: (time: Time) =>
+          formatCrosshairTime(time, intervalRef.current),
       },
     });
   }, [interval]);
@@ -145,37 +194,33 @@ export default function TickerChart({
         attributionLogo: false,
       },
       localization: {
-        locale: "en-US",
+        locale: "ko-KR",
         dateFormat: "yyyy-MM-dd",
-        timeFormatter: (time: Time) => {
-          if (typeof time === "object" && "year" in time) {
-            return `${time.year}-${String(time.month).padStart(2, "0")}-${String(time.day).padStart(2, "0")}`;
-          }
-          if (typeof time === "string") return time;
-          const date = new Date(time * 1000);
-          const md = `${date.getUTCMonth() + 1}/${date.getUTCDate()}`;
-          const hm = `${String(date.getUTCHours()).padStart(2, "0")}:${String(date.getUTCMinutes()).padStart(2, "0")}`;
-          return intervalRef.current === "5" ? `${md} ${hm}` : md;
-        },
+        timeFormatter: (time: Time) =>
+          formatCrosshairTime(time, intervalRef.current),
       },
       grid: {
         vertLines: { color: theme.grid },
         horzLines: { color: theme.grid },
       },
       crosshair: {
-        mode: 1,
+        mode: CrosshairMode.Magnet,
         vertLine: {
+          visible: true,
+          labelVisible: true,
           color: theme.cross,
           labelBackgroundColor: theme.label,
         },
         horzLine: {
+          visible: true,
+          labelVisible: true,
           color: theme.cross,
           labelBackgroundColor: theme.label,
         },
       },
       rightPriceScale: {
         borderColor: theme.grid,
-        scaleMargins: { top: 0.12, bottom: 0.14 },
+        scaleMargins: { top: 0.12, bottom: 0.08 },
       },
       timeScale: {
         borderColor: theme.grid,
@@ -248,7 +293,14 @@ export default function TickerChart({
       }
     };
 
+    const onCrosshairMove = (param: { time?: Time }) => {
+      if (param.time === undefined) return;
+      const label = formatCrosshairTime(param.time, intervalRef.current);
+      setSelectedTime((prev) => (prev === label ? prev : label));
+    };
+
     chart.timeScale().subscribeVisibleLogicalRangeChange(onVisibleRangeChange);
+    chart.subscribeCrosshairMove(onCrosshairMove);
 
     chartRef.current = chart;
     seriesRef.current = series;
@@ -274,10 +326,14 @@ export default function TickerChart({
           vertLine: {
             color: next.cross,
             labelBackgroundColor: next.label,
+            labelVisible: true,
+            visible: true,
           },
           horzLine: {
             color: next.cross,
             labelBackgroundColor: next.label,
+            labelVisible: true,
+            visible: true,
           },
         },
         rightPriceScale: { borderColor: next.grid },
@@ -297,6 +353,7 @@ export default function TickerChart({
       chart
         .timeScale()
         .unsubscribeVisibleLogicalRangeChange(onVisibleRangeChange);
+      chart.unsubscribeCrosshairMove(onCrosshairMove);
       chart.remove();
       chartRef.current = null;
       seriesRef.current = null;
@@ -349,12 +406,26 @@ export default function TickerChart({
   }, [data, interval]);
 
   return (
-    <div className="relative h-full w-full min-h-[200px]">
+    <div className="relative flex h-full w-full min-h-[200px] flex-col">
       <div
         ref={containerRef}
-        className="h-full w-full cursor-grab touch-pan-x active:cursor-grabbing"
+        className="min-h-0 w-full flex-1 cursor-grab touch-pan-x active:cursor-grabbing"
         title="캔들스틱 · 좌우 드래그 · 휠 줌"
       />
+      <div
+        className="flex h-7 shrink-0 items-center justify-center border-t border-[color:var(--border)] px-2"
+        aria-live="polite"
+      >
+        <p
+          className={`text-[12px] font-semibold tabular-nums tracking-tight ${
+            selectedTime
+              ? "text-[color:var(--accent)]"
+              : "text-[color:var(--muted)]"
+          }`}
+        >
+          {selectedTime ?? "캔들을 눌러 날짜·시간 확인"}
+        </p>
+      </div>
       <p className="chart-hint pointer-events-none absolute left-2 top-2 z-10">
         ← 드래그 과거 · 휠 줌
       </p>
