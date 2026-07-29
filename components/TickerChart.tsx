@@ -30,20 +30,35 @@ function pad2(n: number): string {
   return String(n).padStart(2, "0");
 }
 
-/** Crosshair / selection label — readable date·time for 5m / D / M */
-function formatCrosshairTime(time: Time, interval: ChartInterval): string {
+/** Resolve chart time parts in Asia/Seoul (matches site clocks) */
+function kstParts(time: Time): {
+  y: number;
+  m: number;
+  d: number;
+  hh: number;
+  mm: number;
+} {
   if (typeof time === "object" && time !== null && "year" in time) {
-    if (interval === "M") {
-      return `${time.year}-${pad2(time.month)}`;
-    }
-    return `${time.year}-${pad2(time.month)}-${pad2(time.day)}`;
+    return {
+      y: time.year,
+      m: time.month,
+      d: time.day,
+      hh: 0,
+      mm: 0,
+    };
   }
 
   if (typeof time === "string") {
-    return interval === "M" ? time.slice(0, 7) : time;
+    const [ys, ms, ds] = time.split("-");
+    return {
+      y: Number(ys),
+      m: Number(ms),
+      d: Number(ds || 1),
+      hh: 0,
+      mm: 0,
+    };
   }
 
-  const date = new Date(time * 1000);
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Seoul",
     year: "numeric",
@@ -52,47 +67,36 @@ function formatCrosshairTime(time: Time, interval: ChartInterval): string {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
-  }).formatToParts(date);
+  }).formatToParts(new Date(time * 1000));
 
   const get = (type: Intl.DateTimeFormatPartTypes) =>
-    parts.find((p) => p.type === type)?.value ?? "";
+    Number(parts.find((p) => p.type === type)?.value ?? 0);
 
-  const y = get("year");
-  const m = get("month");
-  const d = get("day");
-  const h = get("hour");
-  const min = get("minute");
+  let hh = get("hour");
+  // Some engines emit 24:00 for midnight
+  if (hh === 24) hh = 0;
 
-  if (interval === "M") return `${y}-${m}`;
-  if (interval === "D") return `${y}-${m}-${d}`;
-  return `${y}-${m}-${d} ${h}:${min}`;
+  return {
+    y: get("year"),
+    m: get("month"),
+    d: get("day"),
+    hh,
+    mm: get("minute"),
+  };
 }
 
-/** Keep ≤8 chars so lightweight-charts tick labels don't overlap */
-function formatTickMark(time: Time, tickMarkType: TickMarkType): string {
-  let y: number;
-  let m: number;
-  let d: number;
-  let hh = 0;
-  let mm = 0;
+/** Crosshair / selection label — KST date·time for 5m / D / M */
+function formatCrosshairTime(time: Time, interval: ChartInterval): string {
+  const { y, m, d, hh, mm } = kstParts(time);
 
-  if (typeof time === "string") {
-    const [ys, ms, ds] = time.split("-");
-    y = Number(ys);
-    m = Number(ms);
-    d = Number(ds);
-  } else if (typeof time === "object") {
-    y = time.year;
-    m = time.month;
-    d = time.day;
-  } else {
-    const date = new Date(time * 1000);
-    y = date.getUTCFullYear();
-    m = date.getUTCMonth() + 1;
-    d = date.getUTCDate();
-    hh = date.getUTCHours();
-    mm = date.getUTCMinutes();
-  }
+  if (interval === "M") return `${y}-${pad2(m)}`;
+  if (interval === "D") return `${y}-${pad2(m)}-${pad2(d)}`;
+  return `${y}-${pad2(m)}-${pad2(d)} ${pad2(hh)}:${pad2(mm)} (KST)`;
+}
+
+/** Axis ticks — always KST so they match clocks & selection label */
+function formatTickMark(time: Time, tickMarkType: TickMarkType): string {
+  const { y, m, d, hh, mm } = kstParts(time);
 
   switch (tickMarkType) {
     case TickMarkType.Year:
@@ -109,14 +113,9 @@ function formatTickMark(time: Time, tickMarkType: TickMarkType): string {
   }
 }
 
-function toChartTime(unixSec: number, interval: ChartInterval): Time {
-  if (interval === "5") return unixSec as Time;
-  const date = new Date(unixSec * 1000);
-  return {
-    year: date.getUTCFullYear(),
-    month: date.getUTCMonth() + 1,
-    day: date.getUTCDate(),
-  };
+function toChartTime(unixSec: number, _interval: ChartInterval): Time {
+  // Keep UTC timestamps; all labels format in KST so axis matches site clocks
+  return unixSec as Time;
 }
 
 function readChartTheme() {
